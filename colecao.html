@@ -247,10 +247,9 @@
     <div class="max-w-[600px] mx-auto px-4 py-4">
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
-            <button onclick="instalarApp()" id="btnInstalarApp" class="btn-app" aria-label="Instalar aplicativo">
-                <span class="spinner"></span>
-                <span class="text">📲 Instalar App</span>
-            </button>
+            <a href="https://garagem164.github.io/garagem1-64/" class="btn-app" id="btnApp">
+                <span class="text">📲 Baixar App</span>
+            </a>
             <h1 class="header-title font-racing text-yellow-400 italic">GARAGEM 1:64</h1>
         </div>
 
@@ -296,16 +295,16 @@
 
                 <!-- Chamada para o app -->
                 <div class="mt-6 text-center">
-                    <button onclick="instalarApp()" class="inline-block bg-yellow-400/10 border border-yellow-400/20 text-yellow-400 font-bold py-3 px-6 rounded-2xl text-sm uppercase tracking-widest hover:bg-yellow-400/20 transition-all cursor-pointer">
+                    <a href="https://garagem164.github.io/garagem1-64/" class="inline-block bg-yellow-400/10 border border-yellow-400/20 text-yellow-400 font-bold py-3 px-6 rounded-2xl text-sm uppercase tracking-widest hover:bg-yellow-400/20 transition-all">
                         📲 Quer ter sua própria coleção? Baixe o App!
-                    </button>
+                    </a>
                 </div>
             </div>
 
             <div id="erro" style="display: none;" class="text-center py-12">
                 <p class="text-4xl mb-4">😕</p>
                 <p class="text-zinc-400">Coleção não encontrada ou indisponível.</p>
-                <button onclick="instalarApp()" class="btn-app mt-4 inline-block">📲 Ir para o App</button>
+                <a href="https://garagem164.github.io/garagem1-64/" class="btn-app mt-4 inline-block">📲 Ir para o App</a>
             </div>
         </div>
     </div>
@@ -313,7 +312,7 @@
     <div id="toast" class="toast"></div>
 
     <script>
-        // Configuração Firebase (mesma do app)
+        // Configuração Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBVK38FbPuwDAWHsILQSAFtRR5DhCo1w3Q",
             authDomain: "garagem-1-64.firebaseapp.com",
@@ -335,61 +334,65 @@
         let displayName = '';
 
         // ============================================
-        // ====== FUNÇÃO INSTALAR APP ==================
+        // ====== FUNÇÃO PARA ABRIR O APP =============
         // ============================================
+        
+        // Detecta se está no Chrome e pode instalar
         let deferredPrompt = null;
-
-        // Detecta se o app pode ser instalado
+        
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            // Mostra o botão de instalação
-            document.getElementById('btnInstalarApp').style.display = 'inline-flex';
+            // Muda o texto do botão
+            const btn = document.getElementById('btnApp');
+            if (btn) {
+                btn.innerHTML = '<span class="text">📲 Instalar App</span>';
+            }
         });
 
-        // Detecta se o app já foi instalado
+        // Detecta se já está instalado
         window.addEventListener('appinstalled', () => {
             deferredPrompt = null;
+            const btn = document.getElementById('btnApp');
+            if (btn) {
+                btn.innerHTML = '<span class="text">✅ App Instalado</span>';
+            }
             showToast('✅ App instalado com sucesso! 🎉');
         });
 
-        // Função principal de instalação
-        window.instalarApp = async function() {
-            const btn = document.getElementById('btnInstalarApp');
+        // Adiciona evento de clique no botão
+        document.getElementById('btnApp').addEventListener('click', async function(e) {
+            e.preventDefault();
             
-            // Verifica se já está instalado (modo standalone)
+            // Se já está no modo standalone (app instalado)
             if (window.matchMedia('(display-mode: standalone)').matches) {
                 showToast('✅ App já está instalado!');
                 return;
             }
-
+            
             // Tenta instalar via prompt
             if (deferredPrompt) {
-                btn.classList.add('loading');
                 try {
+                    this.classList.add('loading');
                     const result = await deferredPrompt.prompt();
-                    const outcome = result.outcome;
-                    if (outcome === 'accepted') {
+                    if (result.outcome === 'accepted') {
                         showToast('✅ Instalando app...');
                     } else {
                         showToast('❌ Instalação cancelada.');
                     }
                 } catch (error) {
-                    console.error('Erro na instalação:', error);
                     showToast('❌ Erro ao instalar. Tente novamente.');
                 } finally {
-                    btn.classList.remove('loading');
+                    this.classList.remove('loading');
                     deferredPrompt = null;
                 }
                 return;
             }
-
-            // Fallback: Abre o site com dicas
-            showToast('📱 No Chrome, toque em "Adicionar à tela inicial" no menu');
             
-            // Tenta abrir o app principal
-            window.open('https://garagem164.github.io/garagem1-64/', '_blank');
-        };
+            // Fallback: redireciona para o app
+            showToast('📱 Abrindo app...');
+            window.location.href = 'https://garagem164.github.io/garagem1-64/';
+        });
 
         // Se não tiver UID, mostra erro
         if (!uid) {
@@ -398,7 +401,7 @@
             document.getElementById('erro').innerHTML = `
                 <p class="text-4xl mb-4">🔗</p>
                 <p class="text-zinc-400">Link inválido. Use o link gerado pelo app.</p>
-                <button onclick="instalarApp()" class="btn-app mt-4 inline-block">📲 Ir para o App</button>
+                <a href="https://garagem164.github.io/garagem1-64/" class="btn-app mt-4 inline-block">📲 Ir para o App</a>
             `;
         } else {
             carregarColecao();
