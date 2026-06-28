@@ -5,12 +5,15 @@ const OFFLINE_URL = '/offline.html';
 const urlsToCache = [
   '/',
   '/index.html',
+  '/colecao.html',          // ← ADICIONADO: Página pública da coleção
   '/offline.html',
   '/manifest.json',
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Archivo+Black&display=swap',
   'https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js',
+  'https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js',  // ← ADICIONADO: Para a página pública
   'https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js',
+  'https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js', // ← ADICIONADO: Para a página pública
   'https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js'
 ];
 
@@ -19,7 +22,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Cache aberto');
+        console.log('✅ Cache aberto');
         return cache.addAll(urlsToCache);
       })
       .then(() => self.skipWaiting())
@@ -34,6 +37,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.log('🗑️ Cache antigo removido:', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -107,7 +111,7 @@ async function syncCarros() {
       });
     });
   } catch (error) {
-    console.error('Erro na sincronização:', error);
+    console.error('❌ Erro na sincronização:', error);
   }
 }
 
