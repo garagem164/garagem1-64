@@ -35,6 +35,7 @@
             overflow-x: hidden; 
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.3s ease, color 0.3s ease;
+            padding-bottom: 100px;
         }
 
         body.modo-claro {
@@ -2838,8 +2839,8 @@
                     updatedAt: Date.now()
                 });
                 
-                // Gera link
-                const link = `https://garagem-1-64.web.app/colecao/${user.uid}`;
+                // Gera link - ATUALIZADO PARA GITHUB PAGES
+                const link = `https://garagem164.github.io/colecao/${user.uid}`;
                 
                 // Copia para clipboard
                 await navigator.clipboard.writeText(link);
@@ -2885,7 +2886,7 @@
                 
                 if (publicDoc.exists()) {
                     // Se já tem link, usa ele
-                    const link = `https://garagem-1-64.web.app/colecao/${user.uid}`;
+                    const link = `https://garagem164.github.io/colecao/${user.uid}`;
                     const totalUnidades = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
                     const msg = `🏎️ *MINHA COLEÇÃO HOT WHEELS* 🏎️\n\n📦 ${todosCarros.length} carros, ${totalUnidades} unidades\n🔗 ${link}\n\n🏁 Garagem 1:64`;
                     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
@@ -2966,10 +2967,9 @@
             
             getDoc(doc(db, "publicCollections", user.uid)).then((docSnap) => {
                 if (docSnap.exists()) {
-                    const link = `https://garagem-1-64.web.app/colecao/${user.uid}`;
+                    const link = `https://garagem164.github.io/colecao/${user.uid}`;
                     const header = document.querySelector('header');
                     if (header) {
-                        // Verifica se já existe
                         if (!document.getElementById('linkIndicator')) {
                             const linkElement = document.createElement('div');
                             linkElement.id = 'linkIndicator';
