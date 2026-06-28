@@ -44,10 +44,25 @@
             transition: 0.2s;
             font-size: 14px;
             box-shadow: 0 4px 20px rgba(250, 204, 21, 0.3);
+            border: none;
+            cursor: pointer;
         }
         .btn-app:active { 
             transform: scale(0.95); 
         }
+        .btn-app .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        .btn-app.loading .spinner { display: inline-block; }
+        .btn-app.loading .text { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
         .loading-spinner {
             width: 40px;
             height: 40px;
@@ -57,7 +72,6 @@
             animation: spin 0.8s linear infinite;
             margin: 40px auto;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
         .album-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -74,7 +88,6 @@
             border-color: #facc15;
             transform: translateY(-4px);
         }
-        /* ====== IMAGEM COM TAMANHO PADRÃO ====== */
         .album-card .img-container {
             width: 100%;
             height: 160px;
@@ -215,17 +228,11 @@
             from { opacity: 0; transform: translateX(-50%) translateY(20px); }
             to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
-        .header-app-link {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
         @media (max-width: 480px) {
             .header-title { font-size: 1.2rem; }
             .album-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
             .album-card .img-container { height: 120px; }
             .btn-app { font-size: 12px; padding: 10px 16px; }
-            .header-app-link { gap: 8px; }
         }
         @media (max-width: 380px) {
             .album-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -240,9 +247,10 @@
     <div class="max-w-[600px] mx-auto px-4 py-4">
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
-            <a href="https://garagem164.github.io/garagem1-64/" class="btn-app">
-                🚀 Ir para o App
-            </a>
+            <button onclick="instalarApp()" id="btnInstalarApp" class="btn-app" aria-label="Instalar aplicativo">
+                <span class="spinner"></span>
+                <span class="text">📲 Instalar App</span>
+            </button>
             <h1 class="header-title font-racing text-yellow-400 italic">GARAGEM 1:64</h1>
         </div>
 
@@ -288,16 +296,16 @@
 
                 <!-- Chamada para o app -->
                 <div class="mt-6 text-center">
-                    <a href="https://garagem164.github.io/garagem1-64/" class="inline-block bg-yellow-400/10 border border-yellow-400/20 text-yellow-400 font-bold py-3 px-6 rounded-2xl text-sm uppercase tracking-widest hover:bg-yellow-400/20 transition-all">
+                    <button onclick="instalarApp()" class="inline-block bg-yellow-400/10 border border-yellow-400/20 text-yellow-400 font-bold py-3 px-6 rounded-2xl text-sm uppercase tracking-widest hover:bg-yellow-400/20 transition-all cursor-pointer">
                         📲 Quer ter sua própria coleção? Baixe o App!
-                    </a>
+                    </button>
                 </div>
             </div>
 
             <div id="erro" style="display: none;" class="text-center py-12">
                 <p class="text-4xl mb-4">😕</p>
                 <p class="text-zinc-400">Coleção não encontrada ou indisponível.</p>
-                <a href="https://garagem164.github.io/garagem1-64/" class="btn-app mt-4 inline-block">🚀 Ir para o App</a>
+                <button onclick="instalarApp()" class="btn-app mt-4 inline-block">📲 Ir para o App</button>
             </div>
         </div>
     </div>
@@ -326,6 +334,63 @@
         let todosCarros = [];
         let displayName = '';
 
+        // ============================================
+        // ====== FUNÇÃO INSTALAR APP ==================
+        // ============================================
+        let deferredPrompt = null;
+
+        // Detecta se o app pode ser instalado
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Mostra o botão de instalação
+            document.getElementById('btnInstalarApp').style.display = 'inline-flex';
+        });
+
+        // Detecta se o app já foi instalado
+        window.addEventListener('appinstalled', () => {
+            deferredPrompt = null;
+            showToast('✅ App instalado com sucesso! 🎉');
+        });
+
+        // Função principal de instalação
+        window.instalarApp = async function() {
+            const btn = document.getElementById('btnInstalarApp');
+            
+            // Verifica se já está instalado (modo standalone)
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                showToast('✅ App já está instalado!');
+                return;
+            }
+
+            // Tenta instalar via prompt
+            if (deferredPrompt) {
+                btn.classList.add('loading');
+                try {
+                    const result = await deferredPrompt.prompt();
+                    const outcome = result.outcome;
+                    if (outcome === 'accepted') {
+                        showToast('✅ Instalando app...');
+                    } else {
+                        showToast('❌ Instalação cancelada.');
+                    }
+                } catch (error) {
+                    console.error('Erro na instalação:', error);
+                    showToast('❌ Erro ao instalar. Tente novamente.');
+                } finally {
+                    btn.classList.remove('loading');
+                    deferredPrompt = null;
+                }
+                return;
+            }
+
+            // Fallback: Abre o site com dicas
+            showToast('📱 No Chrome, toque em "Adicionar à tela inicial" no menu');
+            
+            // Tenta abrir o app principal
+            window.open('https://garagem164.github.io/garagem1-64/', '_blank');
+        };
+
         // Se não tiver UID, mostra erro
         if (!uid) {
             document.getElementById('loading').style.display = 'none';
@@ -333,7 +398,7 @@
             document.getElementById('erro').innerHTML = `
                 <p class="text-4xl mb-4">🔗</p>
                 <p class="text-zinc-400">Link inválido. Use o link gerado pelo app.</p>
-                <a href="https://garagem164.github.io/garagem1-64/" class="btn-app mt-4 inline-block">🚀 Ir para o App</a>
+                <button onclick="instalarApp()" class="btn-app mt-4 inline-block">📲 Ir para o App</button>
             `;
         } else {
             carregarColecao();
@@ -395,7 +460,6 @@
 
             vazio.style.display = 'none';
             grid.innerHTML = filtered.map(car => {
-                // Tratamento para imagem
                 let imgSrc = car.photo;
                 if (!imgSrc || imgSrc === '' || imgSrc.length > 100000) {
                     imgSrc = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%231a1a2e%22/%3E%3Ctext x=%22100%22 y=%22100%22 text-anchor=%22middle%22 fill=%22%2371717a%22 font-size=%2240%22%3E🚗%3C/text%3E%3C/svg%3E';
