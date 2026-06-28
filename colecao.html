@@ -31,18 +31,23 @@
             border-color: #facc15;
             transform: translateY(-4px);
         }
-        .btn-voltar {
+        .btn-app {
             background: #facc15;
             color: #000;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border-radius: 40px;
             font-weight: 900;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
             transition: 0.2s;
-            font-size: 13px;
+            font-size: 14px;
+            box-shadow: 0 4px 20px rgba(250, 204, 21, 0.3);
         }
-        .btn-voltar:active { transform: scale(0.95); }
+        .btn-app:active { 
+            transform: scale(0.95); 
+        }
         .loading-spinner {
             width: 40px;
             height: 40px;
@@ -58,11 +63,31 @@
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             gap: 16px;
         }
-        .album-card img {
+        .album-card {
+            background: linear-gradient(145deg, #121214, #1c1c1f);
+            border: 1px solid #27272a;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .album-card:hover {
+            border-color: #facc15;
+            transform: translateY(-4px);
+        }
+        /* ====== IMAGEM COM TAMANHO PADRÃO ====== */
+        .album-card .img-container {
             width: 100%;
-            height: 150px;
+            height: 160px;
+            overflow: hidden;
+            background: #0f0f1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .album-card .img-container img {
+            width: 100%;
+            height: 100%;
             object-fit: cover;
-            border-radius: 12px 12px 0 0;
         }
         .album-card .info {
             padding: 10px 12px;
@@ -73,11 +98,17 @@
             text-transform: uppercase;
             color: #facc15;
             text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .album-card-sub {
             font-size: 9px;
             color: #71717a;
             text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .album-card-qty {
             font-size: 10px;
@@ -123,10 +154,6 @@
         .total-badge span { color: #facc15; font-weight: 900; }
         .header-title {
             font-size: 1.5rem;
-        }
-        @media (max-width: 480px) {
-            .header-title { font-size: 1.2rem; }
-            .album-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
         }
         .btn-whatsapp {
             background: #25D366;
@@ -188,6 +215,24 @@
             from { opacity: 0; transform: translateX(-50%) translateY(20px); }
             to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
+        .header-app-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        @media (max-width: 480px) {
+            .header-title { font-size: 1.2rem; }
+            .album-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .album-card .img-container { height: 120px; }
+            .btn-app { font-size: 12px; padding: 10px 16px; }
+            .header-app-link { gap: 8px; }
+        }
+        @media (max-width: 380px) {
+            .album-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .album-card .img-container { height: 100px; }
+            .album-card-title { font-size: 9px; }
+            .album-card-sub { font-size: 8px; }
+        }
     </style>
 </head>
 <body>
@@ -195,9 +240,10 @@
     <div class="max-w-[600px] mx-auto px-4 py-4">
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
-            <a href="https://garagem164.github.io/garagem1-64/" class="btn-voltar">← Voltar</a>
+            <a href="https://garagem164.github.io/garagem1-64/" class="btn-app">
+                🚀 Ir para o App
+            </a>
             <h1 class="header-title font-racing text-yellow-400 italic">GARAGEM 1:64</h1>
-            <div style="width:80px;"></div>
         </div>
 
         <!-- Conteúdo -->
@@ -239,12 +285,19 @@
                         📋 Copiar Link
                     </button>
                 </div>
+
+                <!-- Chamada para o app -->
+                <div class="mt-6 text-center">
+                    <a href="https://garagem164.github.io/garagem1-64/" class="inline-block bg-yellow-400/10 border border-yellow-400/20 text-yellow-400 font-bold py-3 px-6 rounded-2xl text-sm uppercase tracking-widest hover:bg-yellow-400/20 transition-all">
+                        📲 Quer ter sua própria coleção? Baixe o App!
+                    </a>
+                </div>
             </div>
 
             <div id="erro" style="display: none;" class="text-center py-12">
                 <p class="text-4xl mb-4">😕</p>
                 <p class="text-zinc-400">Coleção não encontrada ou indisponível.</p>
-                <a href="https://garagem164.github.io/garagem1-64/" class="btn-voltar mt-4 inline-block">Voltar para o app</a>
+                <a href="https://garagem164.github.io/garagem1-64/" class="btn-app mt-4 inline-block">🚀 Ir para o App</a>
             </div>
         </div>
     </div>
@@ -265,7 +318,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // ====== PEGA O UID DA QUERY STRING ======
+        // Pega o UID da query string
         const urlParams = new URLSearchParams(window.location.search);
         const uid = urlParams.get('uid');
 
@@ -280,7 +333,7 @@
             document.getElementById('erro').innerHTML = `
                 <p class="text-4xl mb-4">🔗</p>
                 <p class="text-zinc-400">Link inválido. Use o link gerado pelo app.</p>
-                <a href="https://garagem164.github.io/garagem1-64/" class="btn-voltar mt-4 inline-block">Voltar para o app</a>
+                <a href="https://garagem164.github.io/garagem1-64/" class="btn-app mt-4 inline-block">🚀 Ir para o App</a>
             `;
         } else {
             carregarColecao();
@@ -288,7 +341,6 @@
 
         async function carregarColecao() {
             try {
-                // Busca os dados públicos
                 const docRef = db.collection('publicCollections').doc(uid);
                 const docSnap = await docRef.get();
 
@@ -302,7 +354,6 @@
                 todosCarros = data.carros || [];
                 displayName = data.displayName || 'Colecionador';
 
-                // Atualiza informações
                 document.getElementById('nomeColecionador').textContent = displayName;
                 document.getElementById('totalCarros').textContent = data.totalCarros || todosCarros.length;
                 document.getElementById('totalUnidades').textContent = data.totalUnidades || todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
@@ -312,7 +363,6 @@
                     document.getElementById('atualizado').textContent = date.toLocaleDateString('pt-BR');
                 }
 
-                // Cria filtros
                 const cats = ['TODOS', ...new Set(todosCarros.map(c => c.category))];
                 document.getElementById('filters').innerHTML = cats.map(c => 
                     `<button onclick="setFilter('${c}')" class="filter-btn ${currentFilter === c ? 'active' : ''}">${c}</button>`
@@ -345,17 +395,19 @@
 
             vazio.style.display = 'none';
             grid.innerHTML = filtered.map(car => {
+                // Tratamento para imagem
                 let imgSrc = car.photo;
-                // Se a imagem for muito grande, usa um placeholder
-                if (imgSrc && imgSrc.length > 100000) {
+                if (!imgSrc || imgSrc === '' || imgSrc.length > 100000) {
                     imgSrc = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%231a1a2e%22/%3E%3Ctext x=%22100%22 y=%22100%22 text-anchor=%22middle%22 fill=%22%2371717a%22 font-size=%2240%22%3E🚗%3C/text%3E%3C/svg%3E';
                 }
                 return `
-                <div class="hw-card">
-                    <img src="${imgSrc}" alt="${car.model}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%231a1a2e%22/%3E%3Ctext x=%22100%22 y=%22100%22 text-anchor=%22middle%22 fill=%22%2371717a%22 font-size=%2240%22%3E🚗%3C/text%3E%3C/svg%3E'">
+                <div class="album-card">
+                    <div class="img-container">
+                        <img src="${imgSrc}" alt="${car.model}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%231a1a2e%22/%3E%3Ctext x=%22100%22 y=%22100%22 text-anchor=%22middle%22 fill=%22%2371717a%22 font-size=%2240%22%3E🚗%3C/text%3E%3C/svg%3E'">
+                    </div>
                     <div class="info">
-                        <div class="album-card-title">${car.model}</div>
-                        <div class="album-card-sub">${car.category}${car.series ? ` • ${car.series}` : ''}</div>
+                        <div class="album-card-title" title="${car.model}">${car.model}</div>
+                        <div class="album-card-sub" title="${car.category}${car.series ? ` • ${car.series}` : ''}">${car.category}${car.series ? ` • ${car.series}` : ''}</div>
                         <div class="album-card-qty">x${car.qty || 1}</div>
                     </div>
                 </div>
