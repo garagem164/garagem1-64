@@ -265,13 +265,26 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Pega o UID da URL
-        const pathParts = window.location.pathname.split('/');
-        const uid = pathParts[pathParts.length - 1];
+        // ====== PEGA O UID DA QUERY STRING ======
+        const urlParams = new URLSearchParams(window.location.search);
+        const uid = urlParams.get('uid');
 
         let currentFilter = 'TODOS';
         let todosCarros = [];
         let displayName = '';
+
+        // Se não tiver UID, mostra erro
+        if (!uid) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('erro').style.display = 'block';
+            document.getElementById('erro').innerHTML = `
+                <p class="text-4xl mb-4">🔗</p>
+                <p class="text-zinc-400">Link inválido. Use o link gerado pelo app.</p>
+                <a href="https://garagem164.github.io/garagem1-64/" class="btn-voltar mt-4 inline-block">Voltar para o app</a>
+            `;
+        } else {
+            carregarColecao();
+        }
 
         async function carregarColecao() {
             try {
@@ -332,7 +345,6 @@
 
             vazio.style.display = 'none';
             grid.innerHTML = filtered.map(car => {
-                // Tratamento para imagem
                 let imgSrc = car.photo;
                 // Se a imagem for muito grande, usa um placeholder
                 if (imgSrc && imgSrc.length > 100000) {
@@ -371,7 +383,6 @@
                     showToast('✅ Link copiado! Compartilhe com seus amigos.');
                 });
             } else {
-                // Fallback
                 const textarea = document.createElement('textarea');
                 textarea.value = link;
                 document.body.appendChild(textarea);
@@ -391,9 +402,6 @@
                 toast.classList.remove('show');
             }, 3000);
         }
-
-        // Carrega a coleção
-        carregarColecao();
     </script>
 </body>
 </html>
