@@ -195,7 +195,7 @@
     <div class="max-w-[600px] mx-auto px-4 py-4">
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
-            <a href="/" class="btn-voltar">← Voltar</a>
+            <a href="https://garagem164.github.io/garagem1-64/" class="btn-voltar">← Voltar</a>
             <h1 class="header-title font-racing text-yellow-400 italic">GARAGEM 1:64</h1>
             <div style="width:80px;"></div>
         </div>
@@ -244,7 +244,7 @@
             <div id="erro" style="display: none;" class="text-center py-12">
                 <p class="text-4xl mb-4">😕</p>
                 <p class="text-zinc-400">Coleção não encontrada ou indisponível.</p>
-                <a href="/" class="btn-voltar mt-4 inline-block">Voltar para o app</a>
+                <a href="https://garagem164.github.io/garagem1-64/" class="btn-voltar mt-4 inline-block">Voltar para o app</a>
             </div>
         </div>
     </div>
@@ -275,6 +275,7 @@
 
         async function carregarColecao() {
             try {
+                // Busca os dados públicos
                 const docRef = db.collection('publicCollections').doc(uid);
                 const docSnap = await docRef.get();
 
@@ -330,16 +331,23 @@
             }
 
             vazio.style.display = 'none';
-            grid.innerHTML = filtered.map(car => `
+            grid.innerHTML = filtered.map(car => {
+                // Tratamento para imagem
+                let imgSrc = car.photo;
+                // Se a imagem for muito grande, usa um placeholder
+                if (imgSrc && imgSrc.length > 100000) {
+                    imgSrc = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%231a1a2e%22/%3E%3Ctext x=%22100%22 y=%22100%22 text-anchor=%22middle%22 fill=%22%2371717a%22 font-size=%2240%22%3E🚗%3C/text%3E%3C/svg%3E';
+                }
+                return `
                 <div class="hw-card">
-                    <img src="${car.photo}" alt="${car.model}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%231a1a2e%22/%3E%3Ctext x=%22100%22 y=%22100%22 text-anchor=%22middle%22 fill=%22%2371717a%22 font-size=%2240%22%3E🚗%3C/text%3E%3C/svg%3E'">
+                    <img src="${imgSrc}" alt="${car.model}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%231a1a2e%22/%3E%3Ctext x=%22100%22 y=%22100%22 text-anchor=%22middle%22 fill=%22%2371717a%22 font-size=%2240%22%3E🚗%3C/text%3E%3C/svg%3E'">
                     <div class="info">
                         <div class="album-card-title">${car.model}</div>
                         <div class="album-card-sub">${car.category}${car.series ? ` • ${car.series}` : ''}</div>
                         <div class="album-card-qty">x${car.qty || 1}</div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         window.setFilter = function(c) {
