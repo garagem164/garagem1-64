@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Coleção - Garagem 1:64</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Archivo+Black&display=swap" rel="stylesheet">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        body { 
+            background: #0f0f1a; 
+            color: white; 
+            font-family: 'Inter', sans-serif;
+            padding-bottom: 80px;
+            min-height: 100vh;
+        }
+        .font-racing { font-family: 'Archivo Black', sans-serif; }
+        .hw-card { 
+            background: linear-gradient(145deg, #121214, #1c1c1f);
+            border: 1px solid #27272a;
+            border-radius: 16px;
+            transition: all 0.3s;
+            overflow: hidden;
+        }
+        .hw-card:hover {
+            border-color: #facc15;
+            transform: translateY(-4px);
+        }
+        .btn-voltar {
+            background: #facc15;
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: 900;
+            text-decoration: none;
+            display: inline-block;
+            transition: 0.2s;
+            font-size: 13px;
+        }
+        .btn-voltar:active { transform: scale(0.95); }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #2d2d44;
+            border-top-color: #facc15;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 40px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .album-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 16px;
+        }
+        .album-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 12px 12px 0 0;
+        }
+        .album-card .info {
+            padding: 10px 12px;
+        }
+        .album-card-title {
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #facc15;
+            text-align: center;
+        }
+        .album-card-sub {
+            font-size: 9px;
+            color: #71717a;
+            text-align: center;
+        }
+        .album-card-qty {
+            font-size: 10px;
+            color: #facc15;
+            text-align: center;
+            font-weight: bold;
+        }
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 12px 0;
+            scrollbar-width: none;
+        }
+        .filter-bar::-webkit-scrollbar { display: none; }
+        .filter-btn {
+            white-space: nowrap;
+            padding: 8px 16px;
+            border-radius: 99px;
+            background: #1c1c1f;
+            border: 1px solid #27272a;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #a1a1aa;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .filter-btn.active {
+            background: #facc15;
+            color: #000;
+            border-color: #facc15;
+        }
+        .total-badge {
+            background: rgba(250, 204, 21, 0.1);
+            border: 1px solid rgba(250, 204, 21, 0.2);
+            padding: 6px 14px;
+            border-radius: 40px;
+            display: inline-block;
+            margin: 4px;
+            font-size: 13px;
+        }
+        .total-badge span { color: #facc15; font-weight: 900; }
+        .header-title {
+            font-size: 1.5rem;
+        }
+        @media (max-width: 480px) {
+            .header-title { font-size: 1.2rem; }
+            .album-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        }
+        .btn-whatsapp {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-weight: 900;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-whatsapp:active { transform: scale(0.95); }
+        .btn-copy {
+            background: #2d2d44;
+            color: #facc15;
+            border: 1px solid #facc15;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-weight: 900;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-copy:active { transform: scale(0.95); }
+        .share-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a2e;
+            color: #facc15;
+            padding: 12px 24px;
+            border-radius: 16px;
+            border: 2px solid #facc15;
+            font-weight: bold;
+            z-index: 9999;
+            font-size: 14px;
+            text-align: center;
+            max-width: 90%;
+            display: none;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.9);
+        }
+        .toast.show { display: block; animation: fadeInUp 0.3s ease; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="max-w-[600px] mx-auto px-4 py-4">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+            <a href="/" class="btn-voltar">← Voltar</a>
+            <h1 class="header-title font-racing text-yellow-400 italic">GARAGEM 1:64</h1>
+            <div style="width:80px;"></div>
+        </div>
+
+        <!-- Conteúdo -->
+        <div id="content">
+            <div id="loading" class="text-center py-12">
+                <div class="loading-spinner"></div>
+                <p class="text-zinc-500 text-sm">Carregando coleção...</p>
+            </div>
+
+            <div id="colecao" style="display: none;">
+                <!-- Info do colecionador -->
+                <div class="text-center mb-4">
+                    <h2 id="nomeColecionador" class="text-2xl font-racing text-yellow-400">-</h2>
+                    <div class="flex justify-center gap-2 flex-wrap mt-2">
+                        <span class="total-badge">📦 <span id="totalCarros">0</span> carros</span>
+                        <span class="total-badge">📊 <span id="totalUnidades">0</span> unidades</span>
+                        <span class="total-badge">🔄 <span id="atualizado">-</span></span>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="filter-bar" id="filters"></div>
+
+                <!-- Grid de carros -->
+                <div id="grid" class="album-grid"></div>
+
+                <!-- Mensagem vazia -->
+                <div id="vazio" class="text-center py-12 text-zinc-500" style="display: none;">
+                    <p class="text-4xl mb-4">🚗</p>
+                    <p>Nenhum carro encontrado nesta categoria</p>
+                </div>
+
+                <!-- Botões de compartilhamento -->
+                <div class="share-buttons mt-6 pt-4 border-t border-zinc-800">
+                    <button onclick="compartilharLink()" class="btn-whatsapp">
+                        💬 Compartilhar no WhatsApp
+                    </button>
+                    <button onclick="copiarLink()" class="btn-copy">
+                        📋 Copiar Link
+                    </button>
+                </div>
+            </div>
+
+            <div id="erro" style="display: none;" class="text-center py-12">
+                <p class="text-4xl mb-4">😕</p>
+                <p class="text-zinc-400">Coleção não encontrada ou indisponível.</p>
+                <a href="/" class="btn-voltar mt-4 inline-block">Voltar para o app</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // Configuração Firebase (mesma do app)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVK38FbPuwDAWHsILQSAFtRR5DhCo1w3Q",
+            authDomain: "garagem-1-64.firebaseapp.com",
+            projectId: "garagem-1-64",
+            storageBucket: "garagem-1-64.firebasestorage.app",
+            messagingSenderId: "476119063825",
+            appId: "1:476119063825:web:ee94afd22ce5553f7740b0"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Pega o UID da URL
+        const pathParts = window.location.pathname.split('/');
+        const uid = pathParts[pathParts.length - 1];
+
+        let currentFilter = 'TODOS';
+        let todosCarros = [];
+        let displayName = '';
+
+        async function carregarColecao() {
+            try {
+                const docRef = db.collection('publicCollections').doc(uid);
+                const docSnap = await docRef.get();
+
+                if (!docSnap.exists) {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('erro').style.display = 'block';
+                    return;
+                }
+
+                const data = docSnap.data();
+                todosCarros = data.carros || [];
+                displayName = data.displayName || 'Colecionador';
+
+                // Atualiza informações
+                document.getElementById('nomeColecionador').textContent = displayName;
+                document.getElementById('totalCarros').textContent = data.totalCarros || todosCarros.length;
+                document.getElementById('totalUnidades').textContent = data.totalUnidades || todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
+                
+                if (data.updatedAt) {
+                    const date = new Date(data.updatedAt);
+                    document.getElementById('atualizado').textContent = date.toLocaleDateString('pt-BR');
+                }
+
+                // Cria filtros
+                const cats = ['TODOS', ...new Set(todosCarros.map(c => c.category))];
+                document.getElementById('filters').innerHTML = cats.map(c => 
+                    `<button onclick="setFilter('${c}')" class="filter-btn ${currentFilter === c ? 'active' : ''}">${c}</button>`
+                ).join('');
+
+                renderCarros();
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('colecao').style.display = 'block';
+
+            } catch (error) {
+                console.error('Erro:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('erro').style.display = 'block';
+            }
+        }
+
+        function renderCarros() {
+            const filtered = currentFilter === 'TODOS' 
+                ? todosCarros 
+                : todosCarros.filter(c => c.category === currentFilter);
+
+            const grid = document.getElementById('grid');
+            const vazio = document.getElementById('vazio');
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                vazio.style.display = 'block';
+                return;
+            }
+
+            vazio.style.display = 'none';
+            grid.innerHTML = filtered.map(car => `
+                <div class="hw-card">
+                    <img src="${car.photo}" alt="${car.model}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%231a1a2e%22/%3E%3Ctext x=%22100%22 y=%22100%22 text-anchor=%22middle%22 fill=%22%2371717a%22 font-size=%2240%22%3E🚗%3C/text%3E%3C/svg%3E'">
+                    <div class="info">
+                        <div class="album-card-title">${car.model}</div>
+                        <div class="album-card-sub">${car.category}${car.series ? ` • ${car.series}` : ''}</div>
+                        <div class="album-card-qty">x${car.qty || 1}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.setFilter = function(c) {
+            currentFilter = c;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent === c);
+            });
+            renderCarros();
+        };
+
+        window.compartilharLink = function() {
+            const link = window.location.href;
+            const msg = `🏎️ *Confira a coleção de ${displayName}!*\n\n📦 ${todosCarros.length} carros\n📊 ${todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0)} unidades\n\n🔗 ${link}\n\n🏁 Garagem 1:64`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        };
+
+        window.copiarLink = function() {
+            const link = window.location.href;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(link).then(() => {
+                    showToast('✅ Link copiado! Compartilhe com seus amigos.');
+                });
+            } else {
+                // Fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = link;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('✅ Link copiado! Compartilhe com seus amigos.');
+            }
+        };
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Carrega a coleção
+        carregarColecao();
+    </script>
+</body>
+</html>
