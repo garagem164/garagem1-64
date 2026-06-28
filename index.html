@@ -2839,8 +2839,8 @@
                     updatedAt: Date.now()
                 });
                 
-                // Gera link - ATUALIZADO PARA GITHUB PAGES
-                const link = `https://garagem164.github.io/colecao/${user.uid}`;
+                // Gera link - CORRIGIDO para GitHub Pages com nome do repositório
+                const link = `https://garagem164.github.io/garagem1-64/colecao/${user.uid}`;
                 
                 // Copia para clipboard
                 await navigator.clipboard.writeText(link);
@@ -2885,8 +2885,8 @@
                 const publicDoc = await getDoc(publicRef);
                 
                 if (publicDoc.exists()) {
-                    // Se já tem link, usa ele
-                    const link = `https://garagem164.github.io/colecao/${user.uid}`;
+                    // Se já tem link, usa ele - CORRIGIDO para GitHub Pages com nome do repositório
+                    const link = `https://garagem164.github.io/garagem1-64/colecao/${user.uid}`;
                     const totalUnidades = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
                     const msg = `🏎️ *MINHA COLEÇÃO HOT WHEELS* 🏎️\n\n📦 ${todosCarros.length} carros, ${totalUnidades} unidades\n🔗 ${link}\n\n🏁 Garagem 1:64`;
                     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
@@ -2967,7 +2967,8 @@
             
             getDoc(doc(db, "publicCollections", user.uid)).then((docSnap) => {
                 if (docSnap.exists()) {
-                    const link = `https://garagem164.github.io/colecao/${user.uid}`;
+                    // CORRIGIDO para GitHub Pages com nome do repositório
+                    const link = `https://garagem164.github.io/garagem1-64/colecao/${user.uid}`;
                     const header = document.querySelector('header');
                     if (header) {
                         if (!document.getElementById('linkIndicator')) {
