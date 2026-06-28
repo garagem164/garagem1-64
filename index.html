@@ -1063,6 +1063,19 @@
                 </section>
 
                 <section id="sectionGaragem" class="hidden space-y-4">
+                    <!-- ====== BOTÕES DE COMPARTILHAMENTO ====== -->
+                    <div class="flex flex-col gap-2">
+                        <button onclick="gerarLinkCompartilhamento()" class="w-full bg-emerald-600 text-white font-racing py-3 rounded-2xl text-sm uppercase italic shadow-lg active:scale-95 transition-all">
+                            🔗 GERAR LINK DA COLEÇÃO
+                        </button>
+                        <button onclick="compartilharWhatsApp()" class="w-full bg-[#25D366] text-white font-racing py-3 rounded-2xl text-sm uppercase italic shadow-lg active:scale-95 transition-all">
+                            💬 COMPARTILHAR NO WHATSAPP
+                        </button>
+                        <button onclick="compartilharColecaoTexto()" class="w-full bg-emerald-600/80 text-white font-racing py-3 rounded-2xl text-sm uppercase italic shadow-lg active:scale-95 transition-all">
+                            📋 COPIAR LISTA DA COLEÇÃO
+                        </button>
+                    </div>
+                    
                     <div class="flex justify-end">
                         <div class="view-toggle">
                             <button id="viewListBtn" class="view-btn active">📋 LISTA</button>
@@ -2772,6 +2785,217 @@
         window.onload = function() { clearAllInputs(); };
         
         window.focusPasteInput = focusPasteInput;
+
+        // ============================================
+        // ====== FUNÇÕES DE COMPARTILHAMENTO ==========
+        // ============================================
+
+        // 1. GERAR LINK COMPARTILHÁVEL
+        window.gerarLinkCompartilhamento = async function() {
+            const user = auth.currentUser;
+            if (!user) {
+                showToast("Faça login primeiro!", "⚠️");
+                return;
+            }
+            
+            if (todosCarros.length === 0) {
+                showToast("Sua garagem está vazia!", "⚠️");
+                return;
+            }
+            
+            const btn = document.activeElement;
+            const textoOriginal = btn ? btn.textContent : 'Gerar Link';
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '⏳ Gerando...';
+            }
+            
+            try {
+                // Busca nome do usuário
+                const perfilRef = doc(db, "perfis", user.uid);
+                const perfilDoc = await getDoc(perfilRef);
+                const displayName = perfilDoc.exists() ? perfilDoc.data().displayName : "Colecionador";
+                
+                // Calcula totais
+                const totalUnidades = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
+                
+                // Prepara dados para público
+                const carrosPublicos = todosCarros.map(c => ({
+                    model: c.model,
+                    series: c.series || '',
+                    category: c.category,
+                    qty: c.qty || 1,
+                    photo: c.photo
+                }));
+                
+                // Salva no Firebase
+                const publicRef = doc(db, "publicCollections", user.uid);
+                await setDoc(publicRef, {
+                    displayName: displayName,
+                    totalCarros: todosCarros.length,
+                    totalUnidades: totalUnidades,
+                    carros: carrosPublicos,
+                    updatedAt: Date.now()
+                });
+                
+                // Gera link
+                const link = `https://garagem-1-64.web.app/colecao/${user.uid}`;
+                
+                // Copia para clipboard
+                await navigator.clipboard.writeText(link);
+                
+                showToast("✅ Link gerado e copiado! Compartilhe com seus amigos.", "🔗");
+                
+                // Pergunta se quer compartilhar no WhatsApp
+                setTimeout(() => {
+                    if (confirm("Quer compartilhar este link no WhatsApp agora?")) {
+                        const msg = `🏎️ *Confira minha coleção de Hot Wheels!*\n\n📦 ${todosCarros.length} carros, ${totalUnidades} unidades\n🔗 ${link}\n\n🏁 Garagem 1:64`;
+                        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+                    }
+                }, 500);
+                
+            } catch (error) {
+                console.error("Erro:", error);
+                showToast("❌ Erro ao gerar link. Tente novamente.", "❌");
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = textoOriginal;
+                }
+            }
+        };
+
+        // 2. COMPARTILHAR NO WHATSAPP
+        window.compartilharWhatsApp = async function() {
+            const user = auth.currentUser;
+            if (!user) {
+                showToast("Faça login primeiro!", "⚠️");
+                return;
+            }
+            
+            if (todosCarros.length === 0) {
+                showToast("Sua garagem está vazia!", "⚠️");
+                return;
+            }
+            
+            // Verifica se já tem link público
+            try {
+                const publicRef = doc(db, "publicCollections", user.uid);
+                const publicDoc = await getDoc(publicRef);
+                
+                if (publicDoc.exists()) {
+                    // Se já tem link, usa ele
+                    const link = `https://garagem-1-64.web.app/colecao/${user.uid}`;
+                    const totalUnidades = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
+                    const msg = `🏎️ *MINHA COLEÇÃO HOT WHEELS* 🏎️\n\n📦 ${todosCarros.length} carros, ${totalUnidades} unidades\n🔗 ${link}\n\n🏁 Garagem 1:64`;
+                    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+                } else {
+                    // Se não tem link, pergunta se quer gerar
+                    if (confirm("Você ainda não tem um link público. Deseja gerar agora?")) {
+                        await window.gerarLinkCompartilhamento();
+                        // Tenta novamente após gerar
+                        setTimeout(() => window.compartilharWhatsApp(), 1000);
+                    }
+                }
+            } catch (error) {
+                console.error("Erro:", error);
+                // Fallback: compartilha como texto
+                compartilharComoTexto();
+            }
+        };
+
+        // 3. COMPARTILHAR COMO TEXTO
+        window.compartilharColecaoTexto = function() {
+            if (todosCarros.length === 0) {
+                showToast("Sua garagem está vazia!", "⚠️");
+                return;
+            }
+            
+            const total = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
+            const categorias = {};
+            todosCarros.forEach(c => {
+                if (!categorias[c.category]) categorias[c.category] = 0;
+                categorias[c.category] += (c.qty || 1);
+            });
+            
+            let msg = "🏎️ *MINHA COLEÇÃO HOT WHEELS* 🏎️\n\n";
+            msg += `📦 Total: *${total}* carros\n\n`;
+            msg += "*📌 CATEGORIAS:*\n";
+            Object.keys(categorias).forEach(cat => {
+                msg += `  • ${cat}: ${categorias[cat]}\n`;
+            });
+            msg += `\n*Principais modelos:*\n`;
+            todosCarros.slice(0, 10).forEach(c => {
+                msg += `  • ${c.model}${c.series ? ` (${c.series})` : ''} x${c.qty || 1}\n`;
+            });
+            if (todosCarros.length > 10) {
+                msg += `  • ... e mais ${todosCarros.length - 10} modelos\n`;
+            }
+            msg += `\n🏁 Garagem 1:64`;
+            
+            // Copia para clipboard
+            navigator.clipboard.writeText(msg).then(() => {
+                showToast("📋 Lista copiada! Cole em um app de mensagens.", "✅");
+            }).catch(() => {
+                // Fallback: prompt
+                prompt("Copie o texto abaixo:", msg);
+            });
+        };
+
+        // Função auxiliar para compartilhar como texto (fallback)
+        function compartilharComoTexto() {
+            const total = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
+            let msg = "🏎️ *MINHA COLEÇÃO HOT WHEELS* 🏎️\n\n";
+            msg += `📦 Total: ${total} carros\n\n`;
+            msg += "*Principais modelos:*\n";
+            todosCarros.slice(0, 10).forEach(c => {
+                msg += `  • ${c.model} x${c.qty || 1}\n`;
+            });
+            if (todosCarros.length > 10) {
+                msg += `  • ... e mais ${todosCarros.length - 10} modelos\n`;
+            }
+            msg += `\n🏁 Garagem 1:64`;
+            
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // 4. MOSTRAR LINK NA TELA INICIAL
+        function adicionarLinkNaTelaInicial() {
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            getDoc(doc(db, "publicCollections", user.uid)).then((docSnap) => {
+                if (docSnap.exists()) {
+                    const link = `https://garagem-1-64.web.app/colecao/${user.uid}`;
+                    const header = document.querySelector('header');
+                    if (header) {
+                        // Verifica se já existe
+                        if (!document.getElementById('linkIndicator')) {
+                            const linkElement = document.createElement('div');
+                            linkElement.id = 'linkIndicator';
+                            linkElement.className = 'text-[8px] text-emerald-400 font-black uppercase mt-1 cursor-pointer';
+                            linkElement.innerHTML = '🔗 Link público disponível';
+                            linkElement.onclick = () => {
+                                navigator.clipboard.writeText(link);
+                                showToast("🔗 Link copiado!", "✅");
+                            };
+                            header.appendChild(linkElement);
+                        }
+                    }
+                }
+            }).catch(() => {});
+        }
+
+        // Chama a função após o login
+        const originalOnAuth = onAuthStateChanged;
+        onAuthStateChanged = function(callback) {
+            originalOnAuth(auth, (user) => {
+                callback(user);
+                if (user) {
+                    setTimeout(adicionarLinkNaTelaInicial, 2000);
+                }
+            });
+        };
     </script>
 </body>
 </html>
