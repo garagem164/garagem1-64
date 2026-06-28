@@ -50,18 +50,6 @@
         .btn-app:active { 
             transform: scale(0.95); 
         }
-        .btn-app .spinner {
-            display: none;
-            width: 18px;
-            height: 18px;
-            border: 2px solid rgba(0,0,0,0.2);
-            border-top-color: #000;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-        }
-        .btn-app.loading .spinner { display: inline-block; }
-        .btn-app.loading .text { display: none; }
-        @keyframes spin { to { transform: rotate(360deg); } }
         
         .loading-spinner {
             width: 40px;
@@ -72,6 +60,8 @@
             animation: spin 0.8s linear infinite;
             margin: 40px auto;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
         .album-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -247,9 +237,9 @@
     <div class="max-w-[600px] mx-auto px-4 py-4">
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
-            <a href="https://garagem164.github.io/garagem1-64/" class="btn-app" id="btnApp">
-                <span class="text">📲 Baixar App</span>
-            </a>
+            <button onclick="irParaApp()" class="btn-app" id="btnApp">
+                📲 Baixar App
+            </button>
             <h1 class="header-title font-racing text-yellow-400 italic">GARAGEM 1:64</h1>
         </div>
 
@@ -295,16 +285,16 @@
 
                 <!-- Chamada para o app -->
                 <div class="mt-6 text-center">
-                    <a href="https://garagem164.github.io/garagem1-64/" class="inline-block bg-yellow-400/10 border border-yellow-400/20 text-yellow-400 font-bold py-3 px-6 rounded-2xl text-sm uppercase tracking-widest hover:bg-yellow-400/20 transition-all">
+                    <button onclick="irParaApp()" class="inline-block bg-yellow-400/10 border border-yellow-400/20 text-yellow-400 font-bold py-3 px-6 rounded-2xl text-sm uppercase tracking-widest hover:bg-yellow-400/20 transition-all cursor-pointer">
                         📲 Quer ter sua própria coleção? Baixe o App!
-                    </a>
+                    </button>
                 </div>
             </div>
 
             <div id="erro" style="display: none;" class="text-center py-12">
                 <p class="text-4xl mb-4">😕</p>
                 <p class="text-zinc-400">Coleção não encontrada ou indisponível.</p>
-                <a href="https://garagem164.github.io/garagem1-64/" class="btn-app mt-4 inline-block">📲 Ir para o App</a>
+                <button onclick="irParaApp()" class="btn-app mt-4 inline-block">📲 Ir para o App</button>
             </div>
         </div>
     </div>
@@ -334,64 +324,36 @@
         let displayName = '';
 
         // ============================================
-        // ====== FUNÇÃO PARA ABRIR O APP =============
+        // ====== FUNÇÃO IR PARA O APP ================
         // ============================================
         
-        // Detecta se está no Chrome e pode instalar
-        let deferredPrompt = null;
-        
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            // Muda o texto do botão
-            const btn = document.getElementById('btnApp');
-            if (btn) {
-                btn.innerHTML = '<span class="text">📲 Instalar App</span>';
-            }
-        });
-
-        // Detecta se já está instalado
-        window.addEventListener('appinstalled', () => {
-            deferredPrompt = null;
-            const btn = document.getElementById('btnApp');
-            if (btn) {
-                btn.innerHTML = '<span class="text">✅ App Instalado</span>';
-            }
-            showToast('✅ App instalado com sucesso! 🎉');
-        });
-
-        // Adiciona evento de clique no botão
-        document.getElementById('btnApp').addEventListener('click', async function(e) {
-            e.preventDefault();
-            
-            // Se já está no modo standalone (app instalado)
+        window.irParaApp = function() {
+            // Verifica se já está no app (modo standalone)
             if (window.matchMedia('(display-mode: standalone)').matches) {
-                showToast('✅ App já está instalado!');
+                showToast('✅ Você já está no app!');
                 return;
             }
             
-            // Tenta instalar via prompt
-            if (deferredPrompt) {
-                try {
-                    this.classList.add('loading');
-                    const result = await deferredPrompt.prompt();
-                    if (result.outcome === 'accepted') {
-                        showToast('✅ Instalando app...');
-                    } else {
-                        showToast('❌ Instalação cancelada.');
-                    }
-                } catch (error) {
-                    showToast('❌ Erro ao instalar. Tente novamente.');
-                } finally {
-                    this.classList.remove('loading');
-                    deferredPrompt = null;
-                }
-                return;
+            // Verifica se o navegador suporta instalação (apenas no index.html)
+            const btn = document.getElementById('btnApp');
+            if (btn) {
+                btn.textContent = '⏳ Abrindo...';
+                btn.disabled = true;
             }
             
-            // Fallback: redireciona para o app
-            showToast('📱 Abrindo app...');
+            // Redireciona para o app principal
+            // O navegador vai mostrar o pop-up de instalação automaticamente
             window.location.href = 'https://garagem164.github.io/garagem1-64/';
+        };
+
+        // Detecção de instalação (apenas para feedback)
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Este evento só funciona no index.html, não aqui
+            // Mas mantemos para compatibilidade
+        });
+
+        window.addEventListener('appinstalled', () => {
+            showToast('✅ App instalado com sucesso! 🎉');
         });
 
         // Se não tiver UID, mostra erro
@@ -401,7 +363,7 @@
             document.getElementById('erro').innerHTML = `
                 <p class="text-4xl mb-4">🔗</p>
                 <p class="text-zinc-400">Link inválido. Use o link gerado pelo app.</p>
-                <a href="https://garagem164.github.io/garagem1-64/" class="btn-app mt-4 inline-block">📲 Ir para o App</a>
+                <button onclick="irParaApp()" class="btn-app mt-4 inline-block">📲 Ir para o App</button>
             `;
         } else {
             carregarColecao();
