@@ -4,9 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Garagem 1:64 - Coleção de Miniaturas</title>
+    
+    <!-- ====== META TAGS PWA ====== -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#facc15">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Garagem 1:64">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <meta name="description" content="Coleção de Miniaturas Hot Wheels 1:64">
+    <meta name="keywords" content="hot wheels, miniaturas, coleção, 1:64, carros">
+    <meta name="author" content="Garagem 1:64">
+    
+    <!-- ====== SCRIPTS ====== -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Archivo+Black&display=swap" rel="stylesheet">
+    
     <style>
+        /* ====== CSS EXISTENTE ====== */
         :root {
             --hw-yellow: #facc15;
             --modo-escuro-bg: #050505;
@@ -781,15 +796,69 @@
         body.modo-claro .btn-galeria {
             background: linear-gradient(135deg, #34d399, #10b981);
         }
+
+        /* ====== ESTILOS ADICIONAIS PWA ====== */
+        /* Splash Screen para dispositivos móveis */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #050505;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            transition: opacity 0.5s ease;
+        }
+        #splash-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        #splash-screen .logo {
+            font-size: 4rem;
+            font-family: 'Archivo Black', sans-serif;
+            color: #facc15;
+            text-align: center;
+            line-height: 1;
+            letter-spacing: -2px;
+        }
+        #splash-screen .subtitle {
+            color: #71717a;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+        #splash-screen .loader {
+            margin-top: 2rem;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(250, 204, 21, 0.2);
+            border-top-color: #facc15;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
     </style>
 </head>
-<body class="pb-32">
+<body>
 
+    <!-- ====== SPLASH SCREEN ====== -->
+    <div id="splash-screen">
+        <div class="logo">GARAGEM<br>1:64</div>
+        <div class="subtitle">Coleção de Elite</div>
+        <div class="loader"></div>
+    </div>
+
+    <!-- ====== TOAST ====== -->
     <div id="hwToast">
         <span id="toastIcon">✨</span>
         <span id="toastMsg" class="text-[11px] font-black uppercase tracking-widest text-white"></span>
     </div>
 
+    <!-- ====== MODAIS ====== -->
     <div id="confirmModal">
         <div class="hw-card w-full max-w-xs p-8 text-center border-yellow-500/30">
             <h3 id="confirmTitle" class="text-white font-racing uppercase italic text-lg mb-2">Confirmar?</h3>
@@ -867,7 +936,10 @@
         ⚠️ Você tem um carro não salvo! Deseja continuar?
     </div>
 
+    <!-- ====== CONTEÚDO PRINCIPAL ====== -->
     <div class="max-w-[600px] mx-auto min-h-screen relative">
+        
+        <!-- ====== TELA DE LOGIN ====== -->
         <div id="authScreen">
             <div class="text-center mb-12">
                 <h1 class="text-6xl font-racing text-yellow-400 italic leading-none tracking-tighter uppercase">GARAGEM<br>1:64</h1>
@@ -886,6 +958,7 @@
             </div>
         </div>
 
+        <!-- ====== CONTEÚDO PRINCIPAL (LOGADO) ====== -->
         <div id="mainContent" class="hidden">
             <header class="p-6 flex justify-between items-end">
                 <div>
@@ -1066,12 +1139,66 @@
         <div id="lightboxActionArea"></div>
     </div>
 
+    <!-- ====== REGISTRO DO SERVICE WORKER ====== -->
+    <script>
+        // Remove splash screen após carregar
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('splash-screen').classList.add('hidden');
+            }, 800);
+        });
+
+        // Registro do Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('✅ Service Worker registrado:', registration);
+                        
+                        // Registra para sincronização em background
+                        if ('sync' in registration) {
+                            registration.sync.register('sync-carros')
+                                .then(() => console.log('✅ Sync registrado'))
+                                .catch(err => console.log('Sync não suportado:', err));
+                        }
+                    })
+                    .catch((error) => {
+                        console.log('❌ Falha no registro do SW:', error);
+                    });
+            });
+        }
+
+        // Solicita permissão para notificações (opcional)
+        async function requestNotificationPermission() {
+            if ('Notification' in window && 'serviceWorker' in navigator) {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    try {
+                        const registration = await navigator.serviceWorker.ready;
+                        const subscription = await registration.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: 'BLAhX9Yx8pBf9WgxVqWEHl7k5JQG8Pmz5M8YnXk7J5K9qL2XpR3SxWvQYtUzN6M8aBcDfGhIjKlMnOpQrStUvWx'
+                        });
+                        console.log('✅ Push subscription:', subscription);
+                    } catch (err) {
+                        console.log('Push não suportado:', err);
+                    }
+                }
+            }
+        }
+
+        // Chama a função de permissão após o login
+        document.addEventListener('userLoggedIn', () => {
+            requestNotificationPermission();
+        });
+    </script>
+
+    <!-- ====== SCRIPT PRINCIPAL ====== -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, collectionGroup, getDocs, limit, getDoc, setDoc, increment, where, startAfter } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, deleteUser } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
 
-        // NOVO firebaseConfig para GARAGEM 1:64
         const firebaseConfig = {
             apiKey: "AIzaSyBVK38FbPuwDAWHsILQSAFtRR5DhCo1w3Q",
             authDomain: "garagem-1-64.firebaseapp.com",
@@ -2160,6 +2287,8 @@
                 vibrate();
                 document.getElementById('authEmail').value = '';
                 document.getElementById('authPassword').value = '';
+                // Dispara evento para notificações
+                document.dispatchEvent(new CustomEvent('userLoggedIn'));
             } catch (error) { 
                 if (error.code === 'auth/invalid-credential') showToast("E-mail ou senha incorretos!", "❌");
                 else if (error.code === 'auth/user-not-found') showToast("Usuário não encontrado!", "❌");
@@ -2184,6 +2313,7 @@
                 vibrate();
                 document.getElementById('authEmail').value = '';
                 document.getElementById('authPassword').value = '';
+                document.dispatchEvent(new CustomEvent('userLoggedIn'));
             } catch (error) { 
                 if (error.code === 'auth/email-already-in-use') showToast("E-mail já está em uso!", "❌");
                 else if (error.code === 'auth/weak-password') showToast("Senha muito fraca!", "❌");
