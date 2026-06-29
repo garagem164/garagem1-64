@@ -1933,7 +1933,7 @@
             reader.readAsDataURL(file);
         }
 
-        // ========== FUNÇÃO SALVAR CORRIGIDA ==========
+        // ========== FUNÇÃO SALVAR ==========
         window.salvarNovoCarro = async function() {
             const modelo = document.getElementById('hwModel').value.trim().toUpperCase();
             const quantidade = parseInt(document.getElementById('hwQty').value) || 1;
@@ -3278,38 +3278,110 @@
             }
         }
 
+        // ====== FUNÇÃO DE SUGESTÃO CORRIGIDA ======
         async function fetchSuggestions(val, boxId, isGlobal = false) {
-            const sugBox = document.getElementById(boxId); 
-            const searchVal = val.trim().toUpperCase(); 
-            if (searchVal.length < 3) { sugBox.style.display = 'none'; return; }
-            const q = query(collectionGroup(db, "miniaturas"), limit(30)); 
-            const snap = await getDocs(q); 
-            const results = snap.docs.map(d => ({ ...d.data(), ownerId: d.ref.parent.parent.id, docId: d.id })).filter(data => data.model?.includes(searchVal) && (!isGlobal || data.negotiable));
-            if (results.length > 0) {
-                sugBox.innerHTML = results.slice(0, 5).map(item => {
-                    const userHasIt = todosCarros.some(car => car.model === item.model);
-                    const hasItBadge = userHasIt ? '<span class="ml-2 text-emerald-400 text-[8px]">✅ JÁ TEM</span>' : '';
-                    return `<div class="flex items-center gap-4 p-4 border-b border-zinc-900/50 cursor-pointer hover:bg-zinc-800/50 transition-all" onclick="${isGlobal ? 'selectGlobal' : 'selectNew'}('${item.model.replace(/'/g, "\\'")}', '${item.photo}', '${item.series?.replace(/'/g, "\\'") || ''}', '${item.category}', '${item.ownerId}')"><img src="${item.photo}" class="w-12 h-12 rounded-xl object-cover shadow-md"><div class="text-[10px] font-black uppercase flex-1"><p class="text-white">${item.model}${hasItBadge}</p><p class="text-yellow-500 mt-0.5">${item.series || 'Série?'}</p></div></div>`;
-                }).join('');
-                sugBox.style.display = 'block';
-            } else { sugBox.style.display = 'none'; }
+            const sugBox = document.getElementById(boxId);
+            const searchVal = val.trim().toUpperCase();
+            
+            // Limpa a caixa se tiver menos de 2 caracteres
+            if (searchVal.length < 2) {
+                sugBox.style.display = 'none';
+                sugBox.innerHTML = '';
+                return;
+            }
+            
+            try {
+                // PRIMEIRO: Busca nos carros locais (mais rápido)
+                const resultadosLocais = todosCarros.filter(car => {
+                    const modelo = (car.model || '').toUpperCase();
+                    return modelo.includes(searchVal);
+                });
+                
+                // Se encontrou resultados locais, mostra eles
+                if (resultadosLocais.length > 0 && !isGlobal) {
+                    let html = resultadosLocais.slice(0, 5).map(item => {
+                        const userHasIt = todosCarros.some(car => car.model === item.model);
+                        const hasItBadge = userHasIt ? '<span class="ml-2 text-emerald-400 text-[8px]">✅ JÁ TEM</span>' : '';
+                        return `<div class="flex items-center gap-4 p-4 border-b border-zinc-900/50 cursor-pointer hover:bg-zinc-800/50 transition-all" onclick="selectNew('${item.model.replace(/'/g, "\\'")}', '${item.photo || ''}', '${(item.series || '').replace(/'/g, "\\'")}', '${item.category || 'MAINLINE'}')"><img src="${item.photo || ''}" class="w-12 h-12 rounded-xl object-cover shadow-md"><div class="text-[10px] font-black uppercase flex-1"><p class="text-white">${item.model}${hasItBadge}</p><p class="text-yellow-500 mt-0.5">${item.series || 'Série?'}</p></div></div>`;
+                    }).join('');
+                    
+                    sugBox.innerHTML = html;
+                    sugBox.style.display = 'block';
+                    return;
+                }
+                
+                // SEGUNDO: Busca no Firestore (apenas se não encontrou locais ou é busca global)
+                if (!isGlobal && resultadosLocais.length > 0) {
+                    return; // Já mostrou os locais
+                }
+                
+                // Busca no Firestore
+                const q = query(collectionGroup(db, "miniaturas"), limit(15));
+                const snap = await getDocs(q);
+                
+                let results = snap.docs.map(d => ({ 
+                    ...d.data(), 
+                    ownerId: d.ref.parent.parent.id, 
+                    docId: d.id 
+                }));
+                
+                // Filtra pelo termo de busca
+                results = results.filter(data => {
+                    const modelo = (data.model || '').toUpperCase();
+                    return modelo.includes(searchVal);
+                });
+                
+                // Se for busca global, filtra apenas negociáveis
+                if (isGlobal) {
+                    results = results.filter(data => data.negotiable === true);
+                }
+                
+                // Remove duplicatas (mesmo modelo)
+                const modelosUnicos = new Map();
+                results.forEach(item => {
+                    const key = item.model.toUpperCase();
+                    if (!modelosUnicos.has(key)) {
+                        modelosUnicos.set(key, item);
+                    }
+                });
+                results = Array.from(modelosUnicos.values());
+                
+                if (results.length > 0) {
+                    const html = results.slice(0, 5).map(item => {
+                        const userHasIt = todosCarros.some(car => car.model === item.model);
+                        const hasItBadge = userHasIt ? '<span class="ml-2 text-emerald-400 text-[8px]">✅ JÁ TEM</span>' : '';
+                        const onclickAttr = isGlobal ? 
+                            `selectGlobal('${item.model.replace(/'/g, "\\'")}', '${item.photo || ''}', '${(item.series || '').replace(/'/g, "\\'")}', '${item.category || 'MAINLINE'}', '${item.ownerId}')` :
+                            `selectNew('${item.model.replace(/'/g, "\\'")}', '${item.photo || ''}', '${(item.series || '').replace(/'/g, "\\'")}', '${item.category || 'MAINLINE'}')`;
+                        
+                        return `<div class="flex items-center gap-4 p-4 border-b border-zinc-900/50 cursor-pointer hover:bg-zinc-800/50 transition-all" onclick="${onclickAttr}"><img src="${item.photo || ''}" class="w-12 h-12 rounded-xl object-cover shadow-md"><div class="text-[10px] font-black uppercase flex-1"><p class="text-white">${item.model}${hasItBadge}</p><p class="text-yellow-500 mt-0.5">${item.series || 'Série?'}</p></div></div>`;
+                    }).join('');
+                    
+                    sugBox.innerHTML = html;
+                    sugBox.style.display = 'block';
+                } else {
+                    // Não encontrou nada
+                    if (!isGlobal) {
+                        sugBox.innerHTML = `<div class="p-4 text-center text-zinc-500 text-[10px]">Nenhum modelo encontrado</div>`;
+                        sugBox.style.display = 'block';
+                    } else {
+                        sugBox.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao buscar sugestões:', error);
+                sugBox.style.display = 'none';
+            }
         }
 
-        window.selectGlobal = function(m, p, s, c, ownerId) { 
-            document.getElementById('globalSearchInput').value = m; 
-            document.getElementById('globalSearchSuggestions').style.display = 'none'; 
-            globalResults = [{ model: m, photo: p, series: s, category: c, ownerId: ownerId }]; 
-            renderGlobalResults(); 
-            renderShopeeAds(m);
-        };
-        
+        // ====== FUNÇÃO SELECT NEW CORRIGIDA ======
         window.selectNew = function(m, p, s, c) { 
             document.getElementById('hwModel').value = m; 
             document.getElementById('hwSeries').value = s || ''; 
-            document.getElementById('hwCategory').value = c; 
-            document.getElementById('selectedCategoryText').innerHTML = c;
+            document.getElementById('hwCategory').value = c || 'MAINLINE'; 
+            document.getElementById('selectedCategoryText').innerHTML = c || 'MAINLINE';
             document.getElementById('newModelSuggestions').style.display = 'none'; 
-            if(p) { 
+            if(p && p !== '') { 
                 currentPhoto = p; 
                 document.getElementById('imgPreview').src = p; 
                 document.getElementById('previewContainer').classList.remove('hidden'); 
@@ -3318,30 +3390,14 @@
             pendingCar = { model: m };
         };
 
-        window.setFilter = function(c) { 
-            currentFilter = c; 
-            albumPaginaAtual = 0;
-            renderGaragemPaginada(); 
-            vibrate();
+        window.selectGlobal = function(m, p, s, c, ownerId) { 
+            document.getElementById('globalSearchInput').value = m; 
+            document.getElementById('globalSearchSuggestions').style.display = 'none'; 
+            globalResults = [{ model: m, photo: p, series: s, category: c, ownerId: ownerId }]; 
+            renderGlobalResults(); 
+            renderShopeeAds(m);
         };
-        
-        window.removeHW = async function(id) { 
-            customConfirm("Remover Item", "Deseja remover esta miniatura da sua garagem?", async () => { 
-                await deleteDoc(doc(db, "garagens", auth.currentUser.uid, "miniaturas", id)); 
-                todosCarros = todosCarros.filter(c => c.id !== id);
-                renderGaragemPaginada();
-                showToast("Item removido.", "🗑️"); 
-                vibrate();
-            }); 
-        };
-        
-        window.previewImage = function(input) { 
-            const file = input.files[0]; 
-            if (!file) return;
-            previewImageFromFile(file);
-        };
-        
-        // ====== FUNÇÃO SWITCH TAB CORRIGIDA - FORÇA ATUALIZAÇÃO ======
+
         window.switchTab = function(t) { 
             if (!checkUnsavedCar() && t !== 'novo') return;
             ['novo','garagem','negociaveis'].forEach(x => { 
@@ -3358,9 +3414,7 @@
             if(t === 'garagem') { 
                 currentFilter = 'TODOS'; 
                 albumPaginaAtual = 0;
-                // FORÇA O RECARREGAMENTO COMPLETO DA GARAGEM
                 recarregarGaragemCompleta();
-                // TAMBÉM FORÇA A ATUALIZAÇÃO DO SNAPSHOT
                 if (unsubscribeGarage) {
                     unsubscribeGarage();
                     const user = auth.currentUser;
@@ -3450,10 +3504,47 @@
         const salvarNomeModalBtn = document.getElementById('salvarNomeModal');
         if (salvarNomeModalBtn) { salvarNomeModalBtn.addEventListener('click', salvarNomeModal); }
 
+        // ====== EVENTO DE INPUT CORRIGIDO ======
         const hwModelInput = document.getElementById('hwModel');
+        if (hwModelInput) {
+            hwModelInput.addEventListener('input', function(e) {
+                const valor = e.target.value.trim();
+                // Mostra sugestões apenas se tiver 2 ou mais caracteres
+                if (valor.length >= 2) {
+                    fetchSuggestions(valor, 'newModelSuggestions', false);
+                } else {
+                    const sugBox = document.getElementById('newModelSuggestions');
+                    if (sugBox) {
+                        sugBox.style.display = 'none';
+                        sugBox.innerHTML = '';
+                    }
+                }
+                
+                // Atualiza o pendingCar
+                if (valor || currentPhoto) {
+                    pendingCar = { model: valor };
+                } else {
+                    pendingCar = null;
+                }
+            });
+        }
+
         const globalSearchInput = document.getElementById('globalSearchInput');
-        if (hwModelInput) hwModelInput.addEventListener('input', (e) => { fetchSuggestions(e.target.value, 'newModelSuggestions', false); if (e.target.value.trim() || currentPhoto) pendingCar = { model: e.target.value.trim() }; else pendingCar = null; });
-        if (globalSearchInput) globalSearchInput.addEventListener('input', (e) => { fetchSuggestions(e.target.value, 'globalSearchSuggestions', true); renderShopeeAds(e.target.value.trim()); });
+        if (globalSearchInput) {
+            globalSearchInput.addEventListener('input', (e) => { 
+                const valor = e.target.value.trim();
+                if (valor.length >= 2) {
+                    fetchSuggestions(valor, 'globalSearchSuggestions', true);
+                } else {
+                    const sugBox = document.getElementById('globalSearchSuggestions');
+                    if (sugBox) {
+                        sugBox.style.display = 'none';
+                        sugBox.innerHTML = '';
+                    }
+                }
+                renderShopeeAds(valor); 
+            });
+        }
         
         window.onload = function() { clearAllInputs(); };
         
