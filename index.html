@@ -899,21 +899,192 @@
         }
 
         /* ====== CORREÇÃO: CAMPOS DE PESQUISA E ORDENAÇÃO ====== */
-        #ordenarGaragem {
-            appearance: auto;
-            cursor: pointer;
-            min-width: 120px;
+        .search-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(15, 15, 18, 0.5);
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid #27272a;
         }
 
-        @media (max-width: 480px) {
-            #ordenarGaragem {
-                min-width: 90px;
-                font-size: 10px;
-                padding: 12px;
+        body.modo-claro .search-container {
+            background: rgba(255, 255, 255, 0.5);
+            border-color: #e4e4e7;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-row .search-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-row .search-input-wrapper input {
+            width: 100%;
+            padding: 14px 16px 14px 46px;
+            background: #0f0f11;
+            border: 1px solid #27272a;
+            border-radius: 14px;
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            outline: none;
+            transition: all 0.2s;
+            direction: ltr !important;
+            unicode-bidi: normal !important;
+            text-align: left !important;
+        }
+
+        body.modo-claro .search-row .search-input-wrapper input {
+            background: #ffffff;
+            border-color: #e4e4e7;
+            color: #18181b;
+        }
+
+        .search-row .search-input-wrapper input:focus {
+            border-color: var(--hw-yellow);
+            box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.15);
+        }
+
+        .search-row .search-input-wrapper input::placeholder {
+            color: #71717a;
+            font-weight: 400;
+            text-transform: none;
+            direction: ltr !important;
+            unicode-bidi: normal !important;
+            text-align: left !important;
+        }
+
+        .search-row .search-input-wrapper .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #71717a;
+            font-size: 18px;
+            pointer-events: none;
+        }
+
+        .search-row .search-input-wrapper .clear-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #71717a;
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
+            display: none;
+            transition: all 0.2s;
+        }
+
+        .search-row .search-input-wrapper .clear-btn:hover {
+            color: #facc15;
+        }
+
+        .search-row .search-input-wrapper .clear-btn.visible {
+            display: block;
+        }
+
+        .search-row select {
+            padding: 14px 16px;
+            background: #0f0f11;
+            border: 1px solid #27272a;
+            border-radius: 14px;
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            outline: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            min-width: 140px;
+            appearance: auto;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2371717a' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 40px;
+        }
+
+        body.modo-claro .search-row select {
+            background: #ffffff;
+            border-color: #e4e4e7;
+            color: #18181b;
+        }
+
+        .search-row select:focus {
+            border-color: var(--hw-yellow);
+            box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.15);
+        }
+
+        .search-row select option {
+            background: #0f0f11;
+            color: white;
+            padding: 8px;
+        }
+
+        body.modo-claro .search-row select option {
+            background: #ffffff;
+            color: #18181b;
+        }
+
+        .search-result-info {
+            text-align: right;
+            font-size: 11px;
+            color: #71717a;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            padding-right: 4px;
+        }
+
+        .search-result-info .highlight {
+            color: var(--hw-yellow);
+        }
+
+        @media (max-width: 600px) {
+            .search-row {
+                flex-direction: column;
+                gap: 8px;
             }
-            #searchGaragem {
+
+            .search-row .search-input-wrapper input {
+                padding: 12px 16px 12px 40px;
                 font-size: 13px;
-                padding: 12px !important;
+            }
+
+            .search-row select {
+                width: 100%;
+                min-width: unset;
+                padding: 12px 16px;
+                font-size: 12px;
+            }
+
+            .search-row .search-input-wrapper .search-icon {
+                font-size: 16px;
+                left: 12px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .search-container {
+                padding: 8px;
+            }
+            .search-row .search-input-wrapper input {
+                font-size: 11px;
+                padding: 10px 12px 10px 36px;
+            }
+            .search-row select {
+                font-size: 10px;
+                padding: 10px 12px;
             }
         }
     </style>
@@ -1133,20 +1304,15 @@
                 </section>
 
                 <section id="sectionGaragem" class="hidden space-y-4">
-                    <!-- ====== BARRA DE PESQUISA E ORDENAÇÃO ====== -->
-                    <div class="flex flex-col gap-2 mb-2">
-                        <div class="flex gap-2">
-                            <div class="flex-1 relative">
-                                <input id="searchGaragem" type="text" placeholder="🔍 Buscar modelo, série ou categoria..." 
-                                       class="w-full p-4 input-hw font-bold uppercase text-base" 
-                                       oninput="filtrarGaragem()">
-                                <button onclick="limparBusca()" id="btnLimparBusca" 
-                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white text-base hidden">
-                                    ✕
-                                </button>
+                    <!-- ====== PESQUISA E ORDENAÇÃO ====== -->
+                    <div class="search-container">
+                        <div class="search-row">
+                            <div class="search-input-wrapper">
+                                <span class="search-icon">🔍</span>
+                                <input id="searchGaragem" type="text" placeholder="Buscar modelo, série ou categoria..." oninput="filtrarGaragem()">
+                                <button class="clear-btn" id="btnLimparBusca" onclick="limparBusca()">✕</button>
                             </div>
-                            <select id="ordenarGaragem" onchange="ordenarGaragem()" 
-                                    class="p-4 input-hw font-bold uppercase text-sm min-w-[120px]">
+                            <select id="ordenarGaragem" onchange="ordenarGaragem()">
                                 <option value="modelo">📋 Modelo (A-Z)</option>
                                 <option value="modelo-desc">📋 Modelo (Z-A)</option>
                                 <option value="categoria">🏷️ Categoria</option>
@@ -1154,7 +1320,7 @@
                                 <option value="recente">🕐 Mais Recente</option>
                             </select>
                         </div>
-                        <div id="resultadoBusca" class="text-[10px] text-zinc-500 text-right"></div>
+                        <div class="search-result-info" id="resultadoBusca">📦 0 modelo(s)</div>
                     </div>
                     
                     <!-- ====== BOTÕES DE COMPARTILHAMENTO ====== -->
@@ -2117,104 +2283,8 @@
             finally { carregando = false; document.getElementById('loadingMore').classList.add('hidden'); }
         }
         
-        // ====== FUNÇÃO RENDER GARAGEM COM PESQUISA E ORDENAÇÃO ======
-        function renderGaragemPaginada() {
-            const cats = ['TODOS', 'STH', 'TH', 'MAINLINE', 'PREMIUM', 'PACK'];
-            const filterContainer = document.getElementById('categoryFilters');
-            const totalSpan = document.getElementById('totalCount');
-            const hwListContainer = document.getElementById('viewList');
-            const resultadoBusca = document.getElementById('resultadoBusca');
-            const inputBusca = document.getElementById('searchGaragem');
-            const termoBusca = inputBusca ? inputBusca.value.trim().toUpperCase() : '';
-            const btnLimpar = document.getElementById('btnLimparBusca');
-            
-            if (filterContainer) {
-                filterContainer.innerHTML = cats.map(c => 
-                    `<button onclick="setFilter('${c}')" class="filter-btn ${currentFilter === c ? 'active' : ''}">${c}</button>`
-                ).join('');
-            }
-            
-            // Aplica filtros e ordenação
-            let carrosFiltrados = todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter);
-            
-            // Aplica busca
-            if (termoBusca) {
-                carrosFiltrados = carrosFiltrados.filter(car => {
-                    const modelo = (car.model || '').toUpperCase();
-                    const serie = (car.series || '').toUpperCase();
-                    const categoria = (car.category || '').toUpperCase();
-                    return modelo.includes(termoBusca) || 
-                           serie.includes(termoBusca) || 
-                           categoria.includes(termoBusca);
-                });
-            }
-            
-            // Aplica ordenação
-            const selectOrdenar = document.getElementById('ordenarGaragem');
-            const criterio = selectOrdenar ? selectOrdenar.value : 'modelo';
-            carrosFiltrados = ordenarCarros(carrosFiltrados, criterio);
-            
-            // Atualiza total
-            if (totalSpan) {
-                totalSpan.innerText = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
-            }
-            
-            // Mostra resultado da busca
-            if (resultadoBusca) {
-                const total = carrosFiltrados.length;
-                const totalGeral = todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter).length;
-                if (termoBusca) {
-                    resultadoBusca.textContent = `🔍 ${total} de ${totalGeral} modelo(s) encontrado(s)`;
-                } else {
-                    resultadoBusca.textContent = `📦 ${totalGeral} modelo(s)`;
-                }
-            }
-            
-            // Mostra/esconde botão limpar busca
-            if (btnLimpar) {
-                if (termoBusca) {
-                    btnLimpar.classList.remove('hidden');
-                } else {
-                    btnLimpar.classList.add('hidden');
-                }
-            }
-            
-            // Renderiza lista
-            if (hwListContainer) {
-                if (carrosFiltrados.length === 0 && todosCarros.length === 0) {
-                    hwListContainer.innerHTML = `<div class="hw-card p-8 text-center"><p class="text-zinc-500 text-[10px] uppercase font-black">🚗 Sua garagem está vazia!<br>Clique em NOVO para adicionar seu primeiro Hot Wheels</p></div>`;
-                } else if (carrosFiltrados.length === 0) {
-                    hwListContainer.innerHTML = `<div class="hw-card p-8 text-center"><p class="text-zinc-500 text-[10px] uppercase font-black">🔍 Nenhum carro encontrado para "${termoBusca}"</p></div>`;
-                } else {
-                    hwListContainer.innerHTML = carrosFiltrados.map((car, i) => `
-                        <div class="hw-card p-4 flex gap-4 items-center">
-                            <img src="${car.photo}" onclick="openLightbox(${i}, 'garage')" class="w-20 h-20 rounded-2xl object-cover shadow-lg cursor-pointer">
-                            <div class="flex-1 min-w-0">
-                                <div class="flex justify-between items-start">
-                                    <h4 class="font-black uppercase text-xs truncate text-white">${car.model || 'Sem modelo'}</h4>
-                                    <button onclick="removeHW('${car.id}')" class="text-zinc-600 hover:text-red-500 p-1 text-sm transition-all">✕</button>
-                                </div>
-                                <p class="text-yellow-400 text-[8px] font-black uppercase mt-1">${car.category || 'Sem categoria'}</p>
-                                <div class="flex items-center justify-between mt-3">
-                                    <span class="font-racing text-white text-sm"><span class="text-zinc-500 text-[8px]">QTD:</span> ${car.qty || 1}</span>
-                                    <button onclick="editCar('${car.id}', '${(car.model || '').replace(/'/g, "\\'")}', '${(car.series || '').replace(/'/g, "\\'")}', '${car.category || ''}', ${car.qty || 1})" class="edit-btn" title="Editar carro">
-                                        ✏️
-                                    </button>
-                                </div>
-                            </div>
-                        </div>`).join('');
-                }
-            }
-            
-            if (currentView === 'ALBUM') renderAlbum();
-            if (document.getElementById('lightbox').style.display === 'flex' && currentLightboxType === 'garage') {
-                const idx = currentListForLightbox.findIndex(c => c.id === carrosFiltrados[lightboxIndex]?.id);
-                if (idx !== -1) lightboxIndex = idx;
-                updateLightbox();
-            }
-        }
-
-        // ====== FUNÇÃO ORDENAR CARROS (CORRIGIDA) ======
+        // ====== FUNÇÕES DE PESQUISA E ORDENAÇÃO ======
+        
         function ordenarCarros(carros, criterio) {
             const carrosCopy = [...carros];
             
@@ -2256,11 +2326,117 @@
             }
         }
 
+        function filtrarCarrosPorBusca(carros, termo) {
+            if (!termo) return carros;
+            const termoUpper = termo.toUpperCase();
+            return carros.filter(car => {
+                const modelo = (car.model || '').toUpperCase();
+                const serie = (car.series || '').toUpperCase();
+                const categoria = (car.category || '').toUpperCase();
+                return modelo.includes(termoUpper) || 
+                       serie.includes(termoUpper) || 
+                       categoria.includes(termoUpper);
+            });
+        }
+
+        // ====== FUNÇÃO RENDER GARAGEM COM PESQUISA E ORDENAÇÃO ======
+        function renderGaragemPaginada() {
+            const cats = ['TODOS', 'STH', 'TH', 'MAINLINE', 'PREMIUM', 'PACK'];
+            const filterContainer = document.getElementById('categoryFilters');
+            const totalSpan = document.getElementById('totalCount');
+            const hwListContainer = document.getElementById('viewList');
+            const resultadoBusca = document.getElementById('resultadoBusca');
+            const inputBusca = document.getElementById('searchGaragem');
+            
+            const termoBusca = inputBusca ? inputBusca.value.trim() : '';
+            
+            if (filterContainer) {
+                filterContainer.innerHTML = cats.map(c => 
+                    `<button onclick="setFilter('${c}')" class="filter-btn ${currentFilter === c ? 'active' : ''}">${c}</button>`
+                ).join('');
+            }
+            
+            // Aplica filtros e ordenação
+            let carrosFiltrados = todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter);
+            
+            // Aplica busca
+            if (termoBusca) {
+                carrosFiltrados = filtrarCarrosPorBusca(carrosFiltrados, termoBusca);
+            }
+            
+            // Aplica ordenação
+            const selectOrdenar = document.getElementById('ordenarGaragem');
+            const criterio = selectOrdenar ? selectOrdenar.value : 'modelo';
+            carrosFiltrados = ordenarCarros(carrosFiltrados, criterio);
+            
+            // Atualiza total
+            if (totalSpan) {
+                totalSpan.innerText = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
+            }
+            
+            // Mostra resultado da busca
+            if (resultadoBusca) {
+                const total = carrosFiltrados.length;
+                const totalGeral = todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter).length;
+                if (termoBusca) {
+                    resultadoBusca.innerHTML = `🔍 <span class="highlight">${total}</span> de ${totalGeral} modelo(s) encontrado(s)`;
+                } else {
+                    resultadoBusca.innerHTML = `📦 ${totalGeral} modelo(s)`;
+                }
+            }
+            
+            // Mostra/esconde botão limpar busca
+            const btnLimpar = document.getElementById('btnLimparBusca');
+            if (btnLimpar) {
+                if (termoBusca.length > 0) {
+                    btnLimpar.classList.add('visible');
+                } else {
+                    btnLimpar.classList.remove('visible');
+                }
+            }
+            
+            // Renderiza lista
+            if (hwListContainer) {
+                if (carrosFiltrados.length === 0 && todosCarros.length === 0) {
+                    hwListContainer.innerHTML = `<div class="hw-card p-8 text-center"><p class="text-zinc-500 text-[10px] uppercase font-black">🚗 Sua garagem está vazia!<br>Clique em NOVO para adicionar seu primeiro Hot Wheels</p></div>`;
+                } else if (carrosFiltrados.length === 0) {
+                    hwListContainer.innerHTML = `<div class="hw-card p-8 text-center"><p class="text-zinc-500 text-[10px] uppercase font-black">🔍 Nenhum carro encontrado para "${termoBusca}"</p></div>`;
+                } else {
+                    hwListContainer.innerHTML = carrosFiltrados.map((car, i) => `
+                        <div class="hw-card p-4 flex gap-4 items-center">
+                            <img src="${car.photo}" onclick="openLightbox(${i}, 'garage')" class="w-20 h-20 rounded-2xl object-cover shadow-lg cursor-pointer">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex justify-between items-start">
+                                    <h4 class="font-black uppercase text-xs truncate text-white">${car.model || 'Sem modelo'}</h4>
+                                    <button onclick="removeHW('${car.id}')" class="text-zinc-600 hover:text-red-500 p-1 text-sm transition-all">✕</button>
+                                </div>
+                                <p class="text-yellow-400 text-[8px] font-black uppercase mt-1">${car.category || 'Sem categoria'}</p>
+                                <div class="flex items-center justify-between mt-3">
+                                    <span class="font-racing text-white text-sm"><span class="text-zinc-500 text-[8px]">QTD:</span> ${car.qty || 1}</span>
+                                    <button onclick="editCar('${car.id}', '${(car.model || '').replace(/'/g, "\\'")}', '${(car.series || '').replace(/'/g, "\\'")}', '${car.category || ''}', ${car.qty || 1})" class="edit-btn" title="Editar carro">
+                                        ✏️
+                                    </button>
+                                </div>
+                            </div>
+                        </div>`).join('');
+                }
+            }
+            
+            if (currentView === 'ALBUM') renderAlbum();
+            if (document.getElementById('lightbox').style.display === 'flex' && currentLightboxType === 'garage') {
+                const idx = currentListForLightbox.findIndex(c => c.id === carrosFiltrados[lightboxIndex]?.id);
+                if (idx !== -1) lightboxIndex = idx;
+                updateLightbox();
+            }
+        }
+
         // ====== FUNÇÃO LIMPAR BUSCA ======
         window.limparBusca = function() {
             const input = document.getElementById('searchGaragem');
             if (input) {
                 input.value = '';
+                const btnLimpar = document.getElementById('btnLimparBusca');
+                if (btnLimpar) btnLimpar.classList.remove('visible');
                 renderGaragemPaginada();
                 input.focus();
             }
@@ -2268,6 +2444,17 @@
 
         // ====== FUNÇÃO FILTRAR GARAGEM ======
         window.filtrarGaragem = function() {
+            const input = document.getElementById('searchGaragem');
+            const termo = input ? input.value.trim() : '';
+            const btnLimpar = document.getElementById('btnLimparBusca');
+            
+            if (btnLimpar) {
+                if (termo.length > 0) {
+                    btnLimpar.classList.add('visible');
+                } else {
+                    btnLimpar.classList.remove('visible');
+                }
+            }
             renderGaragemPaginada();
         };
 
