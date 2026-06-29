@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -1114,6 +1114,30 @@
                 </section>
 
                 <section id="sectionGaragem" class="hidden space-y-4">
+                    <!-- ====== BARRA DE PESQUISA E ORDENAÇÃO ====== -->
+                    <div class="flex flex-col gap-2 mb-2">
+                        <div class="flex gap-2">
+                            <div class="flex-1 relative">
+                                <input id="searchGaragem" type="text" placeholder="🔍 Buscar modelo..." 
+                                       class="w-full p-3 input-hw font-bold uppercase text-sm" 
+                                       oninput="filtrarGaragem()">
+                                <button onclick="limparBusca()" id="btnLimparBusca" 
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white text-sm hidden">
+                                    ✕
+                                </button>
+                            </div>
+                            <select id="ordenarGaragem" onchange="ordenarGaragem()" 
+                                    class="p-3 input-hw font-bold uppercase text-sm min-w-[100px]">
+                                <option value="modelo">📋 Modelo (A-Z)</option>
+                                <option value="modelo-desc">📋 Modelo (Z-A)</option>
+                                <option value="categoria">🏷️ Categoria</option>
+                                <option value="quantidade">🔢 Quantidade</option>
+                                <option value="recente">🕐 Mais Recente</option>
+                            </select>
+                        </div>
+                        <div id="resultadoBusca" class="text-[10px] text-zinc-500 text-right"></div>
+                    </div>
+                    
                     <!-- ====== BOTÕES DE COMPARTILHAMENTO ====== -->
                     <div class="flex flex-col gap-2">
                         <button onclick="gerarQRCode()" class="w-full bg-purple-600 text-white font-racing py-3 rounded-2xl text-sm uppercase italic shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
@@ -2074,21 +2098,72 @@
             finally { carregando = false; document.getElementById('loadingMore').classList.add('hidden'); }
         }
         
+        // ====== FUNÇÃO RENDER GARAGEM COM PESQUISA E ORDENAÇÃO ======
         function renderGaragemPaginada() {
             const cats = ['TODOS', 'STH', 'TH', 'MAINLINE', 'PREMIUM', 'PACK'];
             const filterContainer = document.getElementById('categoryFilters');
             const totalSpan = document.getElementById('totalCount');
             const hwListContainer = document.getElementById('viewList');
-            if (filterContainer) filterContainer.innerHTML = cats.map(c => `<button onclick="setFilter('${c}')" class="filter-btn ${currentFilter === c ? 'active' : ''}">${c}</button>`).join('');
-            if (totalSpan) totalSpan.innerText = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
-            const filtered = todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter);
-            if (hwListContainer) {
-                if (filtered.length === 0 && todosCarros.length === 0) {
-                    hwListContainer.innerHTML = `<div class="hw-card p-8 text-center"><p class="text-zinc-500 text-[10px] uppercase font-black">🚗 Sua garagem está vazia!<br>Clique em NOVO para adicionar seu primeiro Hot Wheels</p></div>`;
-                } else if (filtered.length === 0) {
-                    hwListContainer.innerHTML = `<div class="hw-card p-8 text-center"><p class="text-zinc-500 text-[10px] uppercase font-black">Nenhum carro encontrado nesta categoria</p></div>`;
+            const resultadoBusca = document.getElementById('resultadoBusca');
+            const termoBusca = document.getElementById('searchGaragem')?.value.trim().toUpperCase() || '';
+            
+            if (filterContainer) {
+                filterContainer.innerHTML = cats.map(c => 
+                    `<button onclick="setFilter('${c}')" class="filter-btn ${currentFilter === c ? 'active' : ''}">${c}</button>`
+                ).join('');
+            }
+            
+            // Aplica filtros e ordenação
+            let carrosFiltrados = todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter);
+            
+            // Aplica busca
+            if (termoBusca) {
+                carrosFiltrados = carrosFiltrados.filter(car => {
+                    const modelo = car.model?.toUpperCase() || '';
+                    const serie = car.series?.toUpperCase() || '';
+                    const categoria = car.category?.toUpperCase() || '';
+                    return modelo.includes(termoBusca) || 
+                           serie.includes(termoBusca) || 
+                           categoria.includes(termoBusca);
+                });
+            }
+            
+            // Aplica ordenação
+            const criterio = document.getElementById('ordenarGaragem')?.value || 'modelo';
+            carrosFiltrados = ordenarCarros(carrosFiltrados, criterio);
+            
+            if (totalSpan) {
+                totalSpan.innerText = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
+            }
+            
+            // Mostra resultado da busca
+            if (resultadoBusca) {
+                const total = carrosFiltrados.length;
+                const totalGeral = todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter).length;
+                if (termoBusca) {
+                    resultadoBusca.textContent = `🔍 ${total} de ${totalGeral} modelo(s) encontrado(s)`;
                 } else {
-                    hwListContainer.innerHTML = filtered.map((car, i) => `
+                    resultadoBusca.textContent = `📦 ${totalGeral} modelo(s)`;
+                }
+            }
+            
+            // Mostra botão "limpar busca"
+            const btnLimpar = document.getElementById('btnLimparBusca');
+            if (btnLimpar) {
+                if (termoBusca) {
+                    btnLimpar.classList.remove('hidden');
+                } else {
+                    btnLimpar.classList.add('hidden');
+                }
+            }
+            
+            if (hwListContainer) {
+                if (carrosFiltrados.length === 0 && todosCarros.length === 0) {
+                    hwListContainer.innerHTML = `<div class="hw-card p-8 text-center"><p class="text-zinc-500 text-[10px] uppercase font-black">🚗 Sua garagem está vazia!<br>Clique em NOVO para adicionar seu primeiro Hot Wheels</p></div>`;
+                } else if (carrosFiltrados.length === 0) {
+                    hwListContainer.innerHTML = `<div class="hw-card p-8 text-center"><p class="text-zinc-500 text-[10px] uppercase font-black">🔍 Nenhum carro encontrado para "${termoBusca}"</p></div>`;
+                } else {
+                    hwListContainer.innerHTML = carrosFiltrados.map((car, i) => `
                         <div class="hw-card p-4 flex gap-4 items-center">
                             <img src="${car.photo}" onclick="openLightbox(${i}, 'garage')" class="w-20 h-20 rounded-2xl object-cover shadow-lg cursor-pointer">
                             <div class="flex-1 min-w-0">
@@ -2107,13 +2182,54 @@
                         </div>`).join('');
                 }
             }
+            
             if (currentView === 'ALBUM') renderAlbum();
             if (document.getElementById('lightbox').style.display === 'flex' && currentLightboxType === 'garage') {
-                const idx = currentListForLightbox.findIndex(c => c.id === filtered[lightboxIndex]?.id);
+                const idx = currentListForLightbox.findIndex(c => c.id === carrosFiltrados[lightboxIndex]?.id);
                 if (idx !== -1) lightboxIndex = idx;
                 updateLightbox();
             }
         }
+
+        // ====== FUNÇÃO ORDENAR CARROS ======
+        function ordenarCarros(carros, criterio) {
+            const carrosCopy = [...carros];
+            
+            switch(criterio) {
+                case 'modelo':
+                    return carrosCopy.sort((a, b) => a.model.localeCompare(b.model));
+                case 'modelo-desc':
+                    return carrosCopy.sort((a, b) => b.model.localeCompare(a.model));
+                case 'categoria':
+                    return carrosCopy.sort((a, b) => a.category.localeCompare(b.category) || a.model.localeCompare(b.model));
+                case 'quantidade':
+                    return carrosCopy.sort((a, b) => (b.qty || 1) - (a.qty || 1));
+                case 'recente':
+                    return carrosCopy.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                default:
+                    return carrosCopy;
+            }
+        }
+
+        // ====== FUNÇÃO LIMPAR BUSCA ======
+        window.limparBusca = function() {
+            const input = document.getElementById('searchGaragem');
+            if (input) {
+                input.value = '';
+                renderGaragemPaginada();
+                input.focus();
+            }
+        };
+
+        // ====== FUNÇÃO FILTRAR GARAGEM ======
+        window.filtrarGaragem = function() {
+            renderGaragemPaginada();
+        };
+
+        // ====== FUNÇÃO ORDENAR GARAGEM ======
+        window.ordenarGaragem = function() {
+            renderGaragemPaginada();
+        };
         
         async function recarregarGaragemCompleta() {
             ultimoDoc = null;
@@ -2848,18 +2964,14 @@
                 return;
             }
             
-            // Gera o link da coleção
             qrCodeLink = `https://garagem164.github.io/garagem1-64/colecao.html?uid=${user.uid}`;
             
-            // Mostra o modal
             const modal = document.getElementById('qrModal');
             modal.style.display = 'flex';
             
-            // Limpa QR Code anterior
             const container = document.getElementById('qrCodeContainer');
             container.innerHTML = '';
             
-            // Gera novo QR Code
             try {
                 qrCodeInstance = new QRCode(container, {
                     text: qrCodeLink,
@@ -2870,7 +2982,6 @@
                     correctLevel: QRCode.CorrectLevel.H
                 });
                 
-                // Adiciona logo centralizado
                 setTimeout(() => {
                     adicionarLogoQRCode();
                 }, 100);
@@ -2927,7 +3038,6 @@
                         files: [file]
                     });
                 } else {
-                    // Fallback: baixa e abre no WhatsApp
                     window.baixarQRCode();
                     setTimeout(() => {
                         const msg = `📱 *QR Code da minha coleção de Hot Wheels!*\n\nEscaneie para ver todos os meus carros!\n🏁 Garagem 1:64`;
@@ -2951,13 +3061,11 @@
             const centerY = canvas.height / 2;
             const logoSize = 36;
             
-            // Círculo branco no centro
             ctx.beginPath();
             ctx.arc(centerX, centerY, logoSize / 2 + 4, 0, 2 * Math.PI);
             ctx.fillStyle = '#ffffff';
             ctx.fill();
             
-            // Emoji de carro no centro
             ctx.font = '28px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -2965,14 +3073,12 @@
             ctx.fillText('🏎️', centerX, centerY + 2);
         }
 
-        // Fechar modal com ESC
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 fecharQRModal();
             }
         });
 
-        // Fechar modal clicando fora
         document.getElementById('qrModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 fecharQRModal();
