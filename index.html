@@ -2836,9 +2836,6 @@
         // ====== FUNÇÕES QR CODE =====================
         // ============================================
 
-        let qrCodeInstance = null;
-        let qrCodeLink = '';
-
         window.gerarQRCode = async function() {
             const user = auth.currentUser;
             if (!user) {
@@ -2851,14 +2848,18 @@
                 return;
             }
             
+            // Gera o link da coleção
             qrCodeLink = `https://garagem164.github.io/garagem1-64/colecao.html?uid=${user.uid}`;
             
+            // Mostra o modal
             const modal = document.getElementById('qrModal');
             modal.style.display = 'flex';
             
+            // Limpa QR Code anterior
             const container = document.getElementById('qrCodeContainer');
             container.innerHTML = '';
             
+            // Gera novo QR Code
             try {
                 qrCodeInstance = new QRCode(container, {
                     text: qrCodeLink,
@@ -2869,9 +2870,10 @@
                     correctLevel: QRCode.CorrectLevel.H
                 });
                 
+                // Adiciona logo centralizado
                 setTimeout(() => {
                     adicionarLogoQRCode();
-                }, 150);
+                }, 100);
                 
                 showToast("✅ QR Code gerado!", "📱");
                 
@@ -2882,13 +2884,15 @@
             }
         };
 
-        window.fecharQRModal = function() {
+        function fecharQRModal() {
             document.getElementById('qrModal').style.display = 'none';
             if (qrCodeInstance) {
                 qrCodeInstance.clear();
                 qrCodeInstance = null;
             }
-        };
+        }
+
+        window.fecharQRModal = fecharQRModal;
 
         window.baixarQRCode = function() {
             const canvas = document.querySelector('#qrCodeContainer canvas');
@@ -2901,6 +2905,7 @@
             link.download = `qr-code-colecao.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
+            
             showToast('✅ QR Code baixado!', '💾');
         };
 
@@ -2922,6 +2927,7 @@
                         files: [file]
                     });
                 } else {
+                    // Fallback: baixa e abre no WhatsApp
                     window.baixarQRCode();
                     setTimeout(() => {
                         const msg = `📱 *QR Code da minha coleção de Hot Wheels!*\n\nEscaneie para ver todos os meus carros!\n🏁 Garagem 1:64`;
@@ -2936,7 +2942,6 @@
             }
         };
 
-        // ====== FUNÇÃO PARA ADICIONAR LOGO NO QR CODE ======
         function adicionarLogoQRCode() {
             const canvas = document.querySelector('#qrCodeContainer canvas');
             if (!canvas) return;
@@ -2944,60 +2949,33 @@
             const ctx = canvas.getContext('2d');
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
-            const logoSize = 40;
+            const logoSize = 36;
             
-            // Tenta carregar o ícone do app
-            const logo = new Image();
-            logo.crossOrigin = 'anonymous';
-            logo.src = '/icons/icon-192x192.png';
+            // Círculo branco no centro
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, logoSize / 2 + 4, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
             
-            logo.onload = function() {
-                // Fundo branco
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, logoSize / 2 + 6, 0, 2 * Math.PI);
-                ctx.fillStyle = '#ffffff';
-                ctx.fill();
-                
-                // Ícone
-                const x = centerX - logoSize / 2;
-                const y = centerY - logoSize / 2;
-                ctx.drawImage(logo, x, y, logoSize, logoSize);
-                
-                // Borda
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, logoSize / 2 + 4, 0, 2 * Math.PI);
-                ctx.strokeStyle = 'rgba(250, 204, 21, 0.4)';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            };
-            
-            // Fallback: emoji
-            logo.onerror = function() {
-                console.log('⚠️ Ícone não encontrado, usando emoji');
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, logoSize / 2 + 4, 0, 2 * Math.PI);
-                ctx.fillStyle = '#ffffff';
-                ctx.fill();
-                
-                ctx.font = '28px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillStyle = '#1a1a2e';
-                ctx.fillText('🏎️', centerX, centerY + 2);
-            };
+            // Emoji de carro no centro
+            ctx.font = '28px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillText('🏎️', centerX, centerY + 2);
         }
 
-        // Fechar com ESC
+        // Fechar modal com ESC
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                window.fecharQRModal();
+                fecharQRModal();
             }
         });
 
-        // Fechar clicando fora
+        // Fechar modal clicando fora
         document.getElementById('qrModal').addEventListener('click', function(e) {
             if (e.target === this) {
-                window.fecharQRModal();
+                fecharQRModal();
             }
         });
 
