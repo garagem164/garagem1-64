@@ -176,6 +176,7 @@
             border-radius: 16px;
             overflow: hidden;
             transition: all 0.3s;
+            cursor: pointer;
         }
         .album-card:hover {
             border-color: var(--hw-yellow);
@@ -327,12 +328,129 @@
             align-items: center;
             gap: 8px;
         }
+
+        /* ====== LIGHTBOX ====== */
+        #lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        #lightbox.active {
+            display: flex;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 20;
+            cursor: pointer;
+            font-size: 28px;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .lightbox-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+        .lightbox-img {
+            max-width: 95%;
+            max-height: 75vh;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+        }
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            z-index: 20;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            user-select: none;
+        }
+        .lightbox-nav:hover {
+            background: rgba(250, 204, 21, 0.4);
+            border-color: var(--hw-yellow);
+            transform: translateY(-50%) scale(1.1);
+        }
+        .lightbox-nav:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+        .lightbox-nav-left { left: 15px; }
+        .lightbox-nav-right { right: 15px; }
+        .lightbox-info {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: white;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 12px 28px;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 90%;
+        }
+        .lightbox-info .modelo {
+            font-size: 16px;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: var(--hw-yellow);
+        }
+        .lightbox-info .categoria {
+            font-size: 12px;
+            color: #a1a1aa;
+            margin-top: 2px;
+        }
+        .lightbox-counter {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 6px 14px;
+            border-radius: 20px;
+            z-index: 20;
+        }
         @media (max-width: 480px) {
             .header-title { font-size: 1.2rem; }
             .album-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
             .album-card .img-container { height: 120px; }
             .btn-app { font-size: 12px; padding: 10px 16px; }
             .btn-tema { width: 38px; height: 38px; font-size: 16px; }
+            .lightbox-nav { width: 40px; height: 40px; font-size: 20px; }
+            .lightbox-nav-left { left: 8px; }
+            .lightbox-nav-right { right: 8px; }
+            .lightbox-info .modelo { font-size: 14px; }
+            .lightbox-close { width: 40px; height: 40px; font-size: 22px; top: 12px; right: 12px; }
+            .lightbox-img { max-height: 60vh; }
         }
         @media (max-width: 380px) {
             .album-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -412,6 +530,19 @@
         </div>
     </div>
 
+    <!-- ====== LIGHTBOX ====== -->
+    <div id="lightbox" onclick="fecharLightbox(event)">
+        <div class="lightbox-counter" id="lightboxCounter">1 / 1</div>
+        <div class="lightbox-close" onclick="fecharLightbox()">✕</div>
+        <div class="lightbox-nav lightbox-nav-left" onclick="event.stopPropagation(); mudarImagem(-1)">‹</div>
+        <img id="lightboxImg" class="lightbox-img" src="" alt="Visualização">
+        <div class="lightbox-nav lightbox-nav-right" onclick="event.stopPropagation(); mudarImagem(1)">›</div>
+        <div class="lightbox-info">
+            <div class="modelo" id="lightboxModelo">-</div>
+            <div class="categoria" id="lightboxCategoria">-</div>
+        </div>
+    </div>
+
     <div id="toast" class="toast"></div>
 
     <script>
@@ -436,12 +567,15 @@
         let todosCarros = [];
         let displayName = '';
 
+        // ====== LIGHTBOX VARIÁVEIS ======
+        let lightboxIndex = 0;
+        let lightboxList = [];
+
         // ============================================
         // ====== FUNÇÃO IR PARA O APP ================
         // ============================================
         
         window.irParaApp = function() {
-            // Verifica se já está no app (modo standalone)
             if (window.matchMedia('(display-mode: standalone)').matches) {
                 showToast('✅ Você já está no app!');
                 return;
@@ -493,7 +627,62 @@
         document.getElementById('temaBtn').addEventListener('click', alternarTema);
         carregarTema();
 
-        // Se não tiver UID, mostra erro
+        // ============================================
+        // ====== FUNÇÕES LIGHTBOX ====================
+        // ============================================
+        
+        window.abrirLightbox = function(index) {
+            // Filtra a lista atual baseado no filtro ativo
+            const filtered = currentFilter === 'TODOS' 
+                ? todosCarros 
+                : todosCarros.filter(c => c.category === currentFilter);
+            
+            if (filtered.length === 0) return;
+            
+            lightboxList = filtered;
+            lightboxIndex = index;
+            
+            const car = lightboxList[lightboxIndex];
+            if (!car) return;
+            
+            document.getElementById('lightboxImg').src = car.photo || '';
+            document.getElementById('lightboxModelo').textContent = car.model || 'Modelo';
+            document.getElementById('lightboxCategoria').textContent = `${car.category}${car.series ? ` • ${car.series}` : ''}`;
+            document.getElementById('lightboxCounter').textContent = `${lightboxIndex + 1} / ${lightboxList.length}`;
+            
+            document.getElementById('lightbox').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.fecharLightbox = function(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('lightbox').classList.remove('active');
+            document.body.style.overflow = '';
+        };
+
+        window.mudarImagem = function(direcao) {
+            if (lightboxList.length === 0) return;
+            
+            lightboxIndex = (lightboxIndex + direcao + lightboxList.length) % lightboxList.length;
+            const car = lightboxList[lightboxIndex];
+            
+            document.getElementById('lightboxImg').src = car.photo || '';
+            document.getElementById('lightboxModelo').textContent = car.model || 'Modelo';
+            document.getElementById('lightboxCategoria').textContent = `${car.category}${car.series ? ` • ${car.series}` : ''}`;
+            document.getElementById('lightboxCounter').textContent = `${lightboxIndex + 1} / ${lightboxList.length}`;
+        };
+
+        // Fechar com tecla ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') fecharLightbox();
+            if (e.key === 'ArrowLeft') mudarImagem(-1);
+            if (e.key === 'ArrowRight') mudarImagem(1);
+        });
+
+        // ============================================
+        // ====== CARREGAR COLEÇÃO ====================
+        // ============================================
+
         if (!uid) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('erro').style.display = 'block';
@@ -561,13 +750,13 @@
             }
 
             vazio.style.display = 'none';
-            grid.innerHTML = filtered.map(car => {
+            grid.innerHTML = filtered.map((car, index) => {
                 let imgSrc = car.photo;
                 if (!imgSrc || imgSrc === '' || imgSrc.length > 100000) {
                     imgSrc = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%231a1a2e%22/%3E%3Ctext x=%22100%22 y=%22100%22 text-anchor=%22middle%22 fill=%22%2371717a%22 font-size=%2240%22%3E🚗%3C/text%3E%3C/svg%3E';
                 }
                 return `
-                <div class="album-card">
+                <div class="album-card" onclick="abrirLightbox(${index})">
                     <div class="img-container">
                         <img src="${imgSrc}" alt="${car.model}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%231a1a2e%22/%3E%3Ctext x=%22100%22 y=%22100%22 text-anchor=%22middle%22 fill=%22%2371717a%22 font-size=%2240%22%3E🚗%3C/text%3E%3C/svg%3E'">
                     </div>
