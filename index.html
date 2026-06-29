@@ -1286,6 +1286,29 @@
         body.modo-claro #installBanner .btn-close:hover {
             color: #ef4444;
         }
+
+        /* ====== ESTILO PARA BOTÃO EXCLUIR ====== */
+        .delete-btn {
+            background: transparent;
+            border: none;
+            color: #71717a;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 4px 8px;
+            transition: all 0.2s;
+            border-radius: 8px;
+        }
+        .delete-btn:hover {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+        body.modo-claro .delete-btn {
+            color: #52525b;
+        }
+        body.modo-claro .delete-btn:hover {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -2044,6 +2067,53 @@
             }, 100);
         }
 
+        // ========== FUNÇÃO EXCLUIR CORRIGIDA ==========
+        window.removeHW = async function(id) { 
+            if (!id) {
+                showToast("Erro: ID do carro não encontrado", "❌");
+                return;
+            }
+            
+            customConfirm(
+                "Remover Item", 
+                "Deseja remover esta miniatura da sua garagem?", 
+                async () => { 
+                    try {
+                        const user = auth.currentUser;
+                        if (!user) {
+                            showToast("Faça login novamente", "⚠️");
+                            return;
+                        }
+                        
+                        await deleteDoc(doc(db, "garagens", user.uid, "miniaturas", id)); 
+                        
+                        // Remove da lista local
+                        todosCarros = todosCarros.filter(c => c.id !== id);
+                        
+                        // Atualiza a interface
+                        renderGaragemPaginada();
+                        
+                        // Atualiza o total
+                        const totalSpan = document.getElementById('totalCount');
+                        if (totalSpan) {
+                            totalSpan.innerText = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
+                        }
+                        
+                        showToast("Item removido com sucesso!", "🗑️"); 
+                        vibrate();
+                    } catch (error) {
+                        console.error("Erro ao remover:", error);
+                        showToast("Erro ao remover item. Tente novamente.", "❌");
+                    }
+                },
+                () => {
+                    showToast("Remoção cancelada", "❌");
+                }
+            ); 
+        };
+
+        // ========== FUNÇÕES DE PESQUISA GOOGLE ==========
+        
         function isRunningInWebView() {
             const ua = navigator.userAgent;
             return ua.indexOf('wv') > -1 || 
@@ -2622,7 +2692,7 @@
                             <div class="flex-1 min-w-0">
                                 <div class="flex justify-between items-start">
                                     <h4 class="font-black uppercase text-xs truncate text-white">${car.model || 'Sem modelo'}</h4>
-                                    <button onclick="removeHW('${car.id}')" class="text-zinc-600 hover:text-red-500 p-1 text-sm transition-all">✕</button>
+                                    <button onclick="removeHW('${car.id}')" class="delete-btn" title="Remover carro">✕</button>
                                 </div>
                                 <p class="text-yellow-400 text-[8px] font-black uppercase mt-1">${car.category || 'Sem categoria'}</p>
                                 <div class="flex items-center justify-between mt-3">
@@ -3315,8 +3385,8 @@
                     return; // Já mostrou os locais
                 }
                 
-                // Busca no Firestore
-                const q = query(collectionGroup(db, "miniaturas"), limit(15));
+                // Busca no Firestore com índice otimizado
+                const q = query(collectionGroup(db, "miniaturas"), limit(20));
                 const snap = await getDocs(q);
                 
                 let results = snap.docs.map(d => ({ 
@@ -3336,18 +3406,24 @@
                     results = results.filter(data => data.negotiable === true);
                 }
                 
-                // Remove duplicatas (mesmo modelo)
-                const modelosUnicos = new Map();
+                // Remove duplicatas (mesmo modelo) e ordena por popularidade
+                const modeloCount = {};
                 results.forEach(item => {
                     const key = item.model.toUpperCase();
-                    if (!modelosUnicos.has(key)) {
-                        modelosUnicos.set(key, item);
+                    if (!modeloCount[key]) {
+                        modeloCount[key] = { item, count: 0 };
                     }
+                    modeloCount[key].count++;
                 });
-                results = Array.from(modelosUnicos.values());
                 
-                if (results.length > 0) {
-                    const html = results.slice(0, 5).map(item => {
+                // Pega os modelos únicos e ordena por mais frequentes
+                const modelosUnicos = Object.values(modeloCount)
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 8)
+                    .map(entry => entry.item);
+                
+                if (modelosUnicos.length > 0) {
+                    const html = modelosUnicos.map(item => {
                         const userHasIt = todosCarros.some(car => car.model === item.model);
                         const hasItBadge = userHasIt ? '<span class="ml-2 text-emerald-400 text-[8px]">✅ JÁ TEM</span>' : '';
                         const onclickAttr = isGlobal ? 
