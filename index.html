@@ -897,6 +897,25 @@
         body.modo-claro #qrModal {
             background: rgba(255,255,255,0.95);
         }
+
+        /* ====== CORREÇÃO: CAMPOS DE PESQUISA E ORDENAÇÃO ====== */
+        #ordenarGaragem {
+            appearance: auto;
+            cursor: pointer;
+            min-width: 120px;
+        }
+
+        @media (max-width: 480px) {
+            #ordenarGaragem {
+                min-width: 90px;
+                font-size: 10px;
+                padding: 12px;
+            }
+            #searchGaragem {
+                font-size: 13px;
+                padding: 12px !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1118,16 +1137,16 @@
                     <div class="flex flex-col gap-2 mb-2">
                         <div class="flex gap-2">
                             <div class="flex-1 relative">
-                                <input id="searchGaragem" type="text" placeholder="🔍 Buscar modelo..." 
-                                       class="w-full p-3 input-hw font-bold uppercase text-sm" 
+                                <input id="searchGaragem" type="text" placeholder="🔍 Buscar modelo, série ou categoria..." 
+                                       class="w-full p-4 input-hw font-bold uppercase text-base" 
                                        oninput="filtrarGaragem()">
                                 <button onclick="limparBusca()" id="btnLimparBusca" 
-                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white text-sm hidden">
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white text-base hidden">
                                     ✕
                                 </button>
                             </div>
                             <select id="ordenarGaragem" onchange="ordenarGaragem()" 
-                                    class="p-3 input-hw font-bold uppercase text-sm min-w-[100px]">
+                                    class="p-4 input-hw font-bold uppercase text-sm min-w-[120px]">
                                 <option value="modelo">📋 Modelo (A-Z)</option>
                                 <option value="modelo-desc">📋 Modelo (Z-A)</option>
                                 <option value="categoria">🏷️ Categoria</option>
@@ -2105,7 +2124,9 @@
             const totalSpan = document.getElementById('totalCount');
             const hwListContainer = document.getElementById('viewList');
             const resultadoBusca = document.getElementById('resultadoBusca');
-            const termoBusca = document.getElementById('searchGaragem')?.value.trim().toUpperCase() || '';
+            const inputBusca = document.getElementById('searchGaragem');
+            const termoBusca = inputBusca ? inputBusca.value.trim().toUpperCase() : '';
+            const btnLimpar = document.getElementById('btnLimparBusca');
             
             if (filterContainer) {
                 filterContainer.innerHTML = cats.map(c => 
@@ -2119,9 +2140,9 @@
             // Aplica busca
             if (termoBusca) {
                 carrosFiltrados = carrosFiltrados.filter(car => {
-                    const modelo = car.model?.toUpperCase() || '';
-                    const serie = car.series?.toUpperCase() || '';
-                    const categoria = car.category?.toUpperCase() || '';
+                    const modelo = (car.model || '').toUpperCase();
+                    const serie = (car.series || '').toUpperCase();
+                    const categoria = (car.category || '').toUpperCase();
                     return modelo.includes(termoBusca) || 
                            serie.includes(termoBusca) || 
                            categoria.includes(termoBusca);
@@ -2129,9 +2150,11 @@
             }
             
             // Aplica ordenação
-            const criterio = document.getElementById('ordenarGaragem')?.value || 'modelo';
+            const selectOrdenar = document.getElementById('ordenarGaragem');
+            const criterio = selectOrdenar ? selectOrdenar.value : 'modelo';
             carrosFiltrados = ordenarCarros(carrosFiltrados, criterio);
             
+            // Atualiza total
             if (totalSpan) {
                 totalSpan.innerText = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
             }
@@ -2147,8 +2170,7 @@
                 }
             }
             
-            // Mostra botão "limpar busca"
-            const btnLimpar = document.getElementById('btnLimparBusca');
+            // Mostra/esconde botão limpar busca
             if (btnLimpar) {
                 if (termoBusca) {
                     btnLimpar.classList.remove('hidden');
@@ -2157,6 +2179,7 @@
                 }
             }
             
+            // Renderiza lista
             if (hwListContainer) {
                 if (carrosFiltrados.length === 0 && todosCarros.length === 0) {
                     hwListContainer.innerHTML = `<div class="hw-card p-8 text-center"><p class="text-zinc-500 text-[10px] uppercase font-black">🚗 Sua garagem está vazia!<br>Clique em NOVO para adicionar seu primeiro Hot Wheels</p></div>`;
@@ -2168,13 +2191,13 @@
                             <img src="${car.photo}" onclick="openLightbox(${i}, 'garage')" class="w-20 h-20 rounded-2xl object-cover shadow-lg cursor-pointer">
                             <div class="flex-1 min-w-0">
                                 <div class="flex justify-between items-start">
-                                    <h4 class="font-black uppercase text-xs truncate text-white">${car.model}</h4>
+                                    <h4 class="font-black uppercase text-xs truncate text-white">${car.model || 'Sem modelo'}</h4>
                                     <button onclick="removeHW('${car.id}')" class="text-zinc-600 hover:text-red-500 p-1 text-sm transition-all">✕</button>
                                 </div>
-                                <p class="text-yellow-400 text-[8px] font-black uppercase mt-1">${car.category}</p>
+                                <p class="text-yellow-400 text-[8px] font-black uppercase mt-1">${car.category || 'Sem categoria'}</p>
                                 <div class="flex items-center justify-between mt-3">
                                     <span class="font-racing text-white text-sm"><span class="text-zinc-500 text-[8px]">QTD:</span> ${car.qty || 1}</span>
-                                    <button onclick="editCar('${car.id}', '${car.model.replace(/'/g, "\\'")}', '${car.series?.replace(/'/g, "\\'") || ''}', '${car.category}', ${car.qty || 1})" class="edit-btn" title="Editar carro">
+                                    <button onclick="editCar('${car.id}', '${(car.model || '').replace(/'/g, "\\'")}', '${(car.series || '').replace(/'/g, "\\'")}', '${car.category || ''}', ${car.qty || 1})" class="edit-btn" title="Editar carro">
                                         ✏️
                                     </button>
                                 </div>
@@ -2191,21 +2214,43 @@
             }
         }
 
-        // ====== FUNÇÃO ORDENAR CARROS ======
+        // ====== FUNÇÃO ORDENAR CARROS (CORRIGIDA) ======
         function ordenarCarros(carros, criterio) {
             const carrosCopy = [...carros];
             
             switch(criterio) {
                 case 'modelo':
-                    return carrosCopy.sort((a, b) => a.model.localeCompare(b.model));
+                    return carrosCopy.sort((a, b) => {
+                        const modeloA = a.model || '';
+                        const modeloB = b.model || '';
+                        return modeloA.localeCompare(modeloB);
+                    });
                 case 'modelo-desc':
-                    return carrosCopy.sort((a, b) => b.model.localeCompare(a.model));
+                    return carrosCopy.sort((a, b) => {
+                        const modeloA = a.model || '';
+                        const modeloB = b.model || '';
+                        return modeloB.localeCompare(modeloA);
+                    });
                 case 'categoria':
-                    return carrosCopy.sort((a, b) => a.category.localeCompare(b.category) || a.model.localeCompare(b.model));
+                    return carrosCopy.sort((a, b) => {
+                        const catA = a.category || '';
+                        const catB = b.category || '';
+                        const modeloA = a.model || '';
+                        const modeloB = b.model || '';
+                        return catA.localeCompare(catB) || modeloA.localeCompare(modeloB);
+                    });
                 case 'quantidade':
-                    return carrosCopy.sort((a, b) => (b.qty || 1) - (a.qty || 1));
+                    return carrosCopy.sort((a, b) => {
+                        const qtdA = a.qty || 1;
+                        const qtdB = b.qty || 1;
+                        return qtdB - qtdA;
+                    });
                 case 'recente':
-                    return carrosCopy.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                    return carrosCopy.sort((a, b) => {
+                        const dataA = a.createdAt || 0;
+                        const dataB = b.createdAt || 0;
+                        return dataB - dataA;
+                    });
                 default:
                     return carrosCopy;
             }
