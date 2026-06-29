@@ -1776,7 +1776,7 @@
             reader.readAsDataURL(file);
         }
 
-        // ========== FUNÇÃO SALVAR ==========
+        // ========== FUNÇÃO SALVAR CORRIGIDA ==========
         window.salvarNovoCarro = async function() {
             const modelo = document.getElementById('hwModel').value.trim().toUpperCase();
             const quantidade = parseInt(document.getElementById('hwQty').value) || 1;
@@ -1799,25 +1799,54 @@
             btn.innerHTML = '<span class="loading-spinner"></span> Salvando...';
             
             try {
-                const itemExistente = todosCarros.find(car => car.model === modelo);
+                // Busca o item existente pelo modelo (case insensitive)
+                const itemExistente = todosCarros.find(car => car.model.toUpperCase() === modelo);
                 
                 if (itemExistente) {
-                    customConfirm("Modelo já existe", `Você já possui "${modelo}". Deseja somar +${quantidade} unidades?`, async () => {
-                        await updateDoc(doc(db, "garagens", auth.currentUser.uid, "miniaturas", itemExistente.id), { 
-                            qty: increment(quantidade) 
-                        });
-                        showToast(`Quantidade atualizada! Total: ${(itemExistente.qty || 1) + quantidade}`, "➕");
-                        vibrate();
-                        limparFormulario();
-                        switchTab('garagem');
-                        btn.disabled = false;
-                        btn.innerHTML = 'Salvar na Garagem';
-                        await recarregarGaragemCompleta();
-                    });
-                    btn.disabled = false;
-                    btn.innerHTML = 'Salvar na Garagem';
+                    // Mostra o modal de confirmação
+                    customConfirm(
+                        "Modelo já existe", 
+                        `Você já possui "${modelo}" com ${itemExistente.qty || 1} unidade(s). Deseja somar +${quantidade} unidades?`, 
+                        async () => {
+                            try {
+                                // Atualiza no Firestore
+                                await updateDoc(doc(db, "garagens", auth.currentUser.uid, "miniaturas", itemExistente.id), { 
+                                    qty: increment(quantidade) 
+                                });
+                                
+                                // Atualiza a lista local imediatamente
+                                const index = todosCarros.findIndex(c => c.id === itemExistente.id);
+                                if (index !== -1) {
+                                    todosCarros[index].qty = (todosCarros[index].qty || 1) + quantidade;
+                                }
+                                
+                                // Força a atualização da interface
+                                renderGaragemPaginada();
+                                
+                                showToast(`Quantidade atualizada! Total: ${(itemExistente.qty || 1) + quantidade}`, "➕");
+                                vibrate();
+                                limparFormulario();
+                                btn.disabled = false;
+                                btn.innerHTML = 'Salvar na Garagem';
+                                // FICA NA ABA NOVO - NÃO MUDA DE ABA
+                            } catch (error) {
+                                console.error("Erro ao atualizar:", error);
+                                showToast("Erro ao atualizar. Tente novamente.", "❌");
+                                btn.disabled = false;
+                                btn.innerHTML = 'Salvar na Garagem';
+                            }
+                        },
+                        () => {
+                            // Cancelou
+                            btn.disabled = false;
+                            btn.innerHTML = 'Salvar na Garagem';
+                            showToast("Operação cancelada", "❌");
+                        }
+                    );
+                    return;
                 } else {
-                    await addDoc(collection(db, "garagens", auth.currentUser.uid, "miniaturas"), { 
+                    // Adiciona ao Firestore
+                    const docRef = await addDoc(collection(db, "garagens", auth.currentUser.uid, "miniaturas"), { 
                         model: modelo,
                         series: serie,
                         category: categoria,
@@ -1826,13 +1855,29 @@
                         photo: currentPhoto,
                         createdAt: Date.now() 
                     });
+                    
+                    // Adiciona o novo carro à lista local com o ID real
+                    const novoCarro = {
+                        id: docRef.id,
+                        model: modelo,
+                        series: serie,
+                        category: categoria,
+                        qty: quantidade,
+                        negotiable: false,
+                        photo: currentPhoto,
+                        createdAt: Date.now()
+                    };
+                    todosCarros.unshift(novoCarro);
+                    
+                    // Força a atualização da interface
+                    renderGaragemPaginada();
+                    
                     showToast(`"${modelo}" salvo na garagem!`, "🏁");
                     vibrate();
                     limparFormulario();
-                    switchTab('garagem');
                     btn.disabled = false;
                     btn.innerHTML = 'Salvar na Garagem';
-                    await recarregarGaragemCompleta();
+                    // FICA NA ABA NOVO - NÃO MUDA DE ABA
                 }
             } catch (error) {
                 console.error("Erro ao salvar:", error);
@@ -1853,6 +1898,10 @@
             document.getElementById('imgPreview').src = '';
             document.getElementById('tamanhoPreview').innerHTML = '';
             pendingCar = null;
+            // Foca no campo modelo para facilitar nova adição
+            setTimeout(() => {
+                document.getElementById('hwModel').focus();
+            }, 100);
         }
 
         // ========== FUNÇÕES DE PESQUISA GOOGLE ==========
@@ -2786,13 +2835,23 @@
 
         const vibrate = () => { if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); };
 
-        window.customConfirm = function(title, msg, callback) {
+        window.customConfirm = function(title, msg, callback, cancelCallback) {
             const modal = document.getElementById('confirmModal');
             document.getElementById('confirmTitle').innerText = title;
             document.getElementById('confirmText').innerText = msg;
             modal.style.display = 'flex';
-            document.getElementById('confirmOk').onclick = () => { modal.style.display = 'none'; callback(); vibrate(); };
-            document.getElementById('confirmCancel').onclick = () => { modal.style.display = 'none'; vibrate(); };
+            
+            document.getElementById('confirmOk').onclick = () => { 
+                modal.style.display = 'none'; 
+                if (callback) callback();
+                vibrate();
+            };
+            
+            document.getElementById('confirmCancel').onclick = () => { 
+                modal.style.display = 'none'; 
+                if (cancelCallback) cancelCallback();
+                vibrate();
+            };
         };
 
         window.handleForgotPassword = async function() {
