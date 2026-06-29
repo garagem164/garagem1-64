@@ -24,7 +24,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Archivo+Black&display=swap" rel="stylesheet">
     
     <style>
-        /* ====== CSS EXISTENTE ====== */
         :root {
             --hw-yellow: #facc15;
             --modo-escuro-bg: #050505;
@@ -801,7 +800,6 @@
             background: linear-gradient(135deg, #34d399, #10b981);
         }
 
-        /* ====== ESTILOS ADICIONAIS PWA ====== */
         #splash-screen {
             position: fixed;
             top: 0;
@@ -845,7 +843,6 @@
             animation: spin 0.8s linear infinite;
         }
 
-        /* ====== CORREÇÃO: NADA FICA ATRÁS DA BARRA DE NAVEGAÇÃO ====== */
         section {
             padding-bottom: 100px !important;
         }
@@ -863,7 +860,6 @@
             }
         }
 
-        /* ====== QR CODE MODAL ====== */
         #qrModal {
             display: none;
             position: fixed;
@@ -898,7 +894,6 @@
             background: rgba(255,255,255,0.95);
         }
 
-        /* ====== CORREÇÃO: CAMPOS DE PESQUISA E ORDENAÇÃO ====== */
         .search-container {
             display: flex;
             flex-direction: column;
@@ -1003,7 +998,6 @@
             display: flex;
         }
 
-        /* ====== CORREÇÃO BOTÃO X NO MODO CLARO ====== */
         body.modo-claro .search-row .search-input-wrapper .clear-btn {
             color: #71717a;
             background: rgba(255, 255, 255, 0.8);
@@ -1101,7 +1095,6 @@
             color: var(--hw-yellow);
         }
 
-        /* ====== BOTÃO X DA PRÉ-VISUALIZAÇÃO DA IMAGEM ====== */
         #previewContainer button {
             background: rgba(0, 0, 0, 0.8);
             border: none;
@@ -1279,13 +1272,8 @@
     <div id="qrModal">
         <div class="hw-card w-full max-w-sm p-8 text-center">
             <h3 class="text-yellow-400 font-racing uppercase italic text-lg mb-4">📱 QR Code da Coleção</h3>
-            
-            <div id="qrCodeContainer" class="mx-auto">
-                <!-- QR Code será gerado aqui -->
-            </div>
-            
+            <div id="qrCodeContainer" class="mx-auto"></div>
             <p class="text-zinc-500 text-[10px] mt-4">Escaneie com a câmera do celular</p>
-            
             <div class="flex gap-3 mt-6">
                 <button onclick="fecharQRModal()" class="flex-1 py-3 rounded-xl bg-zinc-800 text-zinc-400 font-black uppercase text-[10px] active:scale-95 transition-all">Fechar</button>
                 <button onclick="baixarQRCode()" class="flex-1 py-3 rounded-xl bg-emerald-600 text-white font-black uppercase text-[10px] active:scale-95 transition-all">💾 Salvar</button>
@@ -1340,9 +1328,7 @@
                             <label class="text-[9px] font-black text-zinc-500 uppercase ml-2 mb-1 block tracking-widest">Modelo</label>
                             <input id="hwModel" type="text" autocomplete="off" placeholder="EX: NISSAN SKYLINE R34" class="p-4 input-hw font-bold uppercase">
                             <div id="newModelSuggestions" class="suggestions-box"></div>
-                            <button id="googleSearchBtn" class="google-search-btn" onclick="pesquisarGoogleImagens()">
-                                🔍 PESQUISAR NO GOOGLE IMAGENS
-                            </button>
+                            <button id="googleSearchBtn" class="google-search-btn" onclick="pesquisarGoogleImagens()">🔍 PESQUISAR NO GOOGLE IMAGENS</button>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div class="relative">
@@ -1353,16 +1339,13 @@
                             <div>
                                 <label class="text-[9px] font-black text-zinc-500 uppercase ml-2 mb-1 block tracking-widest">Categoria</label>
                                 <div class="relative">
-                                    <button id="categoryButton" type="button" 
-                                            class="w-full p-4 input-hw font-bold uppercase text-left flex items-center justify-between"
-                                            onclick="toggleCategoryDropdown()">
+                                    <button id="categoryButton" type="button" class="w-full p-4 input-hw font-bold uppercase text-left flex items-center justify-between" onclick="toggleCategoryDropdown()">
                                         <span id="selectedCategoryText">MAINLINE</span>
                                         <svg class="w-4 h-4 text-zinc-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                         </svg>
                                     </button>
-                                    <div id="categoryDropdown" class="suggestions-box" style="display: none; position: absolute; width: 100%; z-index: 50;">
-                                    </div>
+                                    <div id="categoryDropdown" class="suggestions-box" style="display: none; position: absolute; width: 100%; z-index: 50;"></div>
                                 </div>
                                 <input type="hidden" id="hwCategory" value="MAINLINE">
                             </div>
@@ -1371,12 +1354,8 @@
                         <div>
                             <label class="text-[9px] font-black text-zinc-500 uppercase ml-2 mb-1 block tracking-widest">Adicionar Foto</label>
                             <div class="botoes-imagem">
-                                <button type="button" onclick="abrirCamera()" class="btn-camera">
-                                    📷 TIRAR FOTO
-                                </button>
-                                <button type="button" onclick="abrirGaleria()" class="btn-galeria">
-                                    🖼️ GALERIA
-                                </button>
+                                <button type="button" onclick="abrirCamera()" class="btn-camera">📷 TIRAR FOTO</button>
+                                <button type="button" onclick="abrirGaleria()" class="btn-galeria">🖼️ GALERIA</button>
                             </div>
                         </div>
                         
@@ -1397,7 +1376,6 @@
                 </section>
 
                 <section id="sectionGaragem" class="hidden space-y-4">
-                    <!-- ====== PESQUISA E ORDENAÇÃO ====== -->
                     <div class="search-container">
                         <div class="search-row">
                             <div class="search-input-wrapper">
@@ -1419,7 +1397,6 @@
                         <div class="search-result-info" id="resultadoBusca">📦 0 modelo(s)</div>
                     </div>
                     
-                    <!-- ====== BOTÕES DE COMPARTILHAMENTO ====== -->
                     <div class="flex flex-col gap-2">
                         <button onclick="gerarQRCode()" class="w-full bg-purple-600 text-white font-racing py-3 rounded-2xl text-sm uppercase italic shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
                             <span class="text-xl">📱</span> GERAR QR CODE DA COLEÇÃO
@@ -1437,9 +1414,7 @@
                     </div>
                     
                     <div class="filter-bar" id="categoryFilters"></div>
-                    
                     <div id="viewList" class="grid grid-cols-1 gap-3"></div>
-                    
                     <div id="viewAlbum" style="display: none;">
                         <div id="albumGrid" class="album-grid"></div>
                         <div class="album-navigation">
@@ -1448,11 +1423,8 @@
                             <button id="albumNextBtn" class="album-nav-btn">▶</button>
                         </div>
                     </div>
-                    
                     <div id="loadingMore" class="text-center text-zinc-500 text-[10px] py-4 hidden">⏳ Carregando mais...</div>
-                    <div id="btnCarregarMais" class="carregar-mais-btn hidden" onclick="carregarMaisCarros()">
-                        🔽 CARREGAR MAIS CARROS
-                    </div>
+                    <div id="btnCarregarMais" class="carregar-mais-btn hidden" onclick="carregarMaisCarros()">🔽 CARREGAR MAIS CARROS</div>
                 </section>
 
                 <section id="sectionNegociaveis" class="hidden">
@@ -1479,20 +1451,17 @@
                     <div id="contentPerfil" class="hidden">
                         <div class="hw-card p-6 space-y-6">
                             <h3 class="text-yellow-400 font-racing uppercase text-xs italic">Perfil do Colecionador</h3>
-                            
                             <div>
                                 <label class="text-[9px] font-black text-zinc-500 uppercase ml-2 mb-1 block tracking-widest">NOME DE EXIBIÇÃO</label>
                                 <input id="userDisplayName" type="text" placeholder="EX: Colecionador_Fulano" maxlength="30" class="p-4 input-hw font-bold uppercase">
                                 <p class="text-[7px] text-zinc-600 mt-1">Como você quer ser chamado na comunidade (máx. 30 caracteres)</p>
                             </div>
-                            
                             <h3 class="text-yellow-400 font-racing uppercase text-xs italic pt-2">Perfil de Contato</h3>
                             <div class="space-y-4">
                                 <input id="userWhatsapp" type="tel" placeholder="WHATSAPP (EX: 11999999999)" class="p-4 input-hw font-bold">
                                 <input id="userEmailContact" type="email" placeholder="E-MAIL PÚBLICO" class="p-4 input-hw font-bold">
                                 <button onclick="saveContactProfile()" class="w-full bg-emerald-600 text-white font-racing py-4 rounded-2xl uppercase italic active:scale-95 transition-all">Atualizar Perfil</button>
                             </div>
-                            
                             <div class="border-t border-red-800/50 pt-4 mt-4">
                                 <button id="excluirContaBtn" class="w-full bg-red-600/20 border border-red-600/50 text-red-400 font-racing py-4 rounded-2xl uppercase text-[10px] italic active:scale-95 transition-all">🗑️ EXCLUIR MINHA CONTA</button>
                                 <p class="text-[7px] text-red-500/50 text-center mt-2">⚠️ Esta ação é irreversível. Todos os seus carros serão deletados.</p>
@@ -1531,20 +1500,17 @@
 
     <!-- ====== REGISTRO DO SERVICE WORKER ====== -->
     <script>
-        // Remove splash screen após carregar
         window.addEventListener('load', () => {
             setTimeout(() => {
                 document.getElementById('splash-screen').classList.add('hidden');
             }, 800);
         });
 
-        // Registro do Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
                     .then((registration) => {
                         console.log('✅ Service Worker registrado:', registration);
-                        
                         if ('sync' in registration) {
                             registration.sync.register('sync-carros')
                                 .then(() => console.log('✅ Sync registrado'))
@@ -1652,8 +1618,6 @@
             keys.forEach(key => { if (key.startsWith('cache_')) localStorage.removeItem(key); });
         }
 
-        // ========== FUNÇÕES DE CÂMERA E GALERIA ==========
-        
         window.abrirCamera = function() {
             try {
                 const input = document.createElement('input');
@@ -1661,14 +1625,12 @@
                 input.accept = 'image/*';
                 input.capture = 'environment';
                 input.style.display = 'none';
-                
                 input.onchange = (e) => {
                     if (e.target.files && e.target.files[0]) {
                         previewImageFromFile(e.target.files[0]);
                     }
                     document.body.removeChild(input);
                 };
-                
                 document.body.appendChild(input);
                 input.click();
                 showToast("📷 Abrindo câmera...", "📸");
@@ -1686,14 +1648,12 @@
                 input.type = 'file';
                 input.accept = 'image/*';
                 input.style.display = 'none';
-                
                 input.onchange = (e) => {
                     if (e.target.files && e.target.files[0]) {
                         previewImageFromFile(e.target.files[0]);
                     }
                     document.body.removeChild(input);
                 };
-                
                 document.body.appendChild(input);
                 input.click();
                 showToast("🖼️ Abrindo galeria...", "📁");
@@ -1707,42 +1667,33 @@
         
         function previewImageFromFile(file) {
             if (!file) return;
-            
             if (!file.type.startsWith('image/')) {
                 showToast("Por favor, selecione uma imagem válida", "⚠️");
                 return;
             }
-            
             const tamanhoMB = (file.size / (1024 * 1024)).toFixed(2);
             showToast(`Processando imagem (${tamanhoMB}MB)...`, "📸");
-            
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    
                     let maxWidth = 400;
                     let scale = maxWidth / img.width;
-                    
                     if (img.width < maxWidth) {
                         maxWidth = img.width;
                         scale = 1;
                     }
-                    
                     canvas.width = maxWidth;
                     canvas.height = img.height * scale;
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
                     let qualidade = 0.4;
                     let compressedImage = canvas.toDataURL('image/jpeg', qualidade);
-                    
                     while (compressedImage.length > 60 * 1024 && qualidade > 0.15) {
                         qualidade -= 0.05;
                         compressedImage = canvas.toDataURL('image/jpeg', qualidade);
                     }
-                    
                     if (compressedImage.length > 80 * 1024) {
                         const canvas2 = document.createElement('canvas');
                         const ctx2 = canvas2.getContext('2d');
@@ -1751,7 +1702,6 @@
                         ctx2.drawImage(img, 0, 0, canvas2.width, canvas2.height);
                         compressedImage = canvas2.toDataURL('image/jpeg', 0.25);
                     }
-                    
                     if (compressedImage.length > 100 * 1024) {
                         const canvas3 = document.createElement('canvas');
                         const ctx3 = canvas3.getContext('2d');
@@ -1760,13 +1710,11 @@
                         ctx3.drawImage(img, 0, 0, canvas3.width, canvas3.height);
                         compressedImage = canvas3.toDataURL('image/jpeg', 0.2);
                     }
-                    
                     currentPhoto = compressedImage;
                     const tamanhoKB = (compressedImage.length / 1024).toFixed(0);
                     document.getElementById('imgPreview').src = currentPhoto;
                     document.getElementById('previewContainer').classList.remove('hidden');
                     document.getElementById('tamanhoPreview').innerHTML = `📦 ${tamanhoKB}KB`;
-                    
                     showToast(`Imagem carregada! (${tamanhoKB}KB comprimido)`, "✅");
                     vibrate();
                     pendingCar = { model: document.getElementById('hwModel').value.trim() };
@@ -1776,7 +1724,7 @@
             reader.readAsDataURL(file);
         }
 
-        // ========== FUNÇÃO SALVAR CORRIGIDA ==========
+        // ====== FUNÇÃO SALVAR CORRIGIDA ======
         window.salvarNovoCarro = async function() {
             const modelo = document.getElementById('hwModel').value.trim().toUpperCase();
             const quantidade = parseInt(document.getElementById('hwQty').value) || 1;
@@ -1799,36 +1747,27 @@
             btn.innerHTML = '<span class="loading-spinner"></span> Salvando...';
             
             try {
-                // Busca o item existente pelo modelo (case insensitive)
                 const itemExistente = todosCarros.find(car => car.model.toUpperCase() === modelo);
                 
                 if (itemExistente) {
-                    // Mostra o modal de confirmação
                     customConfirm(
                         "Modelo já existe", 
                         `Você já possui "${modelo}" com ${itemExistente.qty || 1} unidade(s). Deseja somar +${quantidade} unidades?`, 
                         async () => {
                             try {
-                                // Atualiza no Firestore
                                 await updateDoc(doc(db, "garagens", auth.currentUser.uid, "miniaturas", itemExistente.id), { 
                                     qty: increment(quantidade) 
                                 });
-                                
-                                // Atualiza a lista local imediatamente
                                 const index = todosCarros.findIndex(c => c.id === itemExistente.id);
                                 if (index !== -1) {
                                     todosCarros[index].qty = (todosCarros[index].qty || 1) + quantidade;
                                 }
-                                
-                                // Força a atualização da interface
                                 renderGaragemPaginada();
-                                
                                 showToast(`Quantidade atualizada! Total: ${(itemExistente.qty || 1) + quantidade}`, "➕");
                                 vibrate();
                                 limparFormulario();
                                 btn.disabled = false;
                                 btn.innerHTML = 'Salvar na Garagem';
-                                // FICA NA ABA NOVO - NÃO MUDA DE ABA
                             } catch (error) {
                                 console.error("Erro ao atualizar:", error);
                                 showToast("Erro ao atualizar. Tente novamente.", "❌");
@@ -1837,7 +1776,6 @@
                             }
                         },
                         () => {
-                            // Cancelou
                             btn.disabled = false;
                             btn.innerHTML = 'Salvar na Garagem';
                             showToast("Operação cancelada", "❌");
@@ -1845,7 +1783,6 @@
                     );
                     return;
                 } else {
-                    // Adiciona ao Firestore
                     const docRef = await addDoc(collection(db, "garagens", auth.currentUser.uid, "miniaturas"), { 
                         model: modelo,
                         series: serie,
@@ -1856,7 +1793,6 @@
                         createdAt: Date.now() 
                     });
                     
-                    // Adiciona o novo carro à lista local com o ID real
                     const novoCarro = {
                         id: docRef.id,
                         model: modelo,
@@ -1868,16 +1804,12 @@
                         createdAt: Date.now()
                     };
                     todosCarros.unshift(novoCarro);
-                    
-                    // Força a atualização da interface
                     renderGaragemPaginada();
-                    
                     showToast(`"${modelo}" salvo na garagem!`, "🏁");
                     vibrate();
                     limparFormulario();
                     btn.disabled = false;
                     btn.innerHTML = 'Salvar na Garagem';
-                    // FICA NA ABA NOVO - NÃO MUDA DE ABA
                 }
             } catch (error) {
                 console.error("Erro ao salvar:", error);
@@ -1898,14 +1830,11 @@
             document.getElementById('imgPreview').src = '';
             document.getElementById('tamanhoPreview').innerHTML = '';
             pendingCar = null;
-            // Foca no campo modelo para facilitar nova adição
             setTimeout(() => {
                 document.getElementById('hwModel').focus();
             }, 100);
         }
 
-        // ========== FUNÇÕES DE PESQUISA GOOGLE ==========
-        
         function isRunningInWebView() {
             const ua = navigator.userAgent;
             return ua.indexOf('wv') > -1 || 
@@ -1922,11 +1851,9 @@
                     return true;
                 } catch(e) { console.log("Intent falhou:", e); }
             }
-            
             if (window.open && window.open(url, '_system')) {
                 return true;
             }
-            
             try {
                 const link = document.createElement('a');
                 link.href = url;
@@ -1937,12 +1864,10 @@
                 setTimeout(() => document.body.removeChild(link), 100);
                 return true;
             } catch(e) {}
-            
             try {
                 window.location.href = url;
                 return true;
             } catch(e) {}
-            
             showToast("Não foi possível abrir o navegador.", "❌");
             return false;
         }
@@ -1954,14 +1879,12 @@
                 document.getElementById('hwModel').focus();
                 return;
             }
-            
             const termoPesquisa = encodeURIComponent(`${modelo} hot wheels`);
             const googleImagesUrl = `https://www.google.com/search?q=${termoPesquisa}&tbm=isch&hl=pt-BR`;
-            
             if (isRunningInWebView()) {
                 customConfirm(
                     "📱 DICA PARA APK!", 
-                    "Para adicionar a imagem:\n\n1. Toque e segure na imagem desejada\n2. Escolha 'BAIXAR IMAGEM' ou 'SALVAR IMAGEM'\n3. Volte ao app e clique em 'GALERIA'\n\n(O 'Copiar imagem' pode não funcionar no APK)",
+                    "Para adicionar a imagem:\n\n1. Toque e segure na imagem desejada\n2. Escolha 'BAIXAR IMAGEM' ou 'SALVAR IMAGEM'\n3. Volte ao app e clique em 'GALERIA'",
                     () => {
                         abrirNavegadorExterno(googleImagesUrl);
                         setTimeout(() => {
@@ -1979,7 +1902,6 @@
 
         function configurarListenerRetorno() {
             let jaChamou = false;
-            
             const handleVisibilityChange = () => {
                 if (!document.hidden && !jaChamou) {
                     jaChamou = true;
@@ -1993,9 +1915,7 @@
                     document.removeEventListener('visibilitychange', handleVisibilityChange);
                 }
             };
-            
             document.addEventListener('visibilitychange', handleVisibilityChange);
-            
             setTimeout(() => {
                 document.removeEventListener('visibilitychange', handleVisibilityChange);
             }, 10 * 60 * 1000);
@@ -2008,15 +1928,12 @@
                 const pasteInput = document.getElementById('pasteInput');
                 if (pasteInput) pasteInput.value = '';
                 pendingPasteImage = null;
-                
                 const pasteArea = document.getElementById('pasteArea');
                 if (pasteArea) {
                     const oldPreview = pasteArea.querySelector('.preview-img');
                     if (oldPreview) oldPreview.remove();
                 }
-                
                 showToast("Cole a imagem copiada do Google!", "📋");
-                
                 setTimeout(() => {
                     focusPasteInput();
                 }, 300);
@@ -2053,7 +1970,6 @@
                     showToast("Por favor, copie uma imagem", "⚠️");
                 });
             }
-            
             document.addEventListener('paste', async (e) => {
                 const modal = document.getElementById('pasteImageModal');
                 if (modal && modal.style.display === 'flex') {
@@ -2074,39 +1990,31 @@
         
         async function processPastedImage(blob) {
             showToast("Comprimindo imagem...", "🔄");
-            
             if (blob.size > 5 * 1024 * 1024) {
                 showToast("Imagem muito grande! Máximo 5MB.", "⚠️");
                 return;
             }
-            
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    
                     let maxWidth = 400;
                     let scale = maxWidth / img.width;
-                    
                     if (img.width < maxWidth) {
                         maxWidth = img.width;
                         scale = 1;
                     }
-                    
                     canvas.width = maxWidth;
                     canvas.height = img.height * scale;
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
                     let qualidade = 0.4;
                     let compressedImage = canvas.toDataURL('image/jpeg', qualidade);
-                    
                     while (compressedImage.length > 60 * 1024 && qualidade > 0.15) {
                         qualidade -= 0.05;
                         compressedImage = canvas.toDataURL('image/jpeg', qualidade);
                     }
-                    
                     if (compressedImage.length > 80 * 1024) {
                         const canvas2 = document.createElement('canvas');
                         const ctx2 = canvas2.getContext('2d');
@@ -2115,7 +2023,6 @@
                         ctx2.drawImage(img, 0, 0, canvas2.width, canvas2.height);
                         compressedImage = canvas2.toDataURL('image/jpeg', 0.25);
                     }
-                    
                     if (compressedImage.length > 100 * 1024) {
                         const canvas3 = document.createElement('canvas');
                         const ctx3 = canvas3.getContext('2d');
@@ -2124,50 +2031,38 @@
                         ctx3.drawImage(img, 0, 0, canvas3.width, canvas3.height);
                         compressedImage = canvas3.toDataURL('image/jpeg', 0.2);
                     }
-                    
                     pendingPasteImage = compressedImage;
-                    
                     const tamanhoKB = (compressedImage.length / 1024).toFixed(0);
                     showToast(`✅ Imagem comprimida para ${tamanhoKB}KB!`, "⚡");
-                    
                     const pasteArea = document.getElementById('pasteArea');
                     if (pasteArea) {
                         const oldPreview = pasteArea.querySelector('.preview-img');
                         if (oldPreview) oldPreview.remove();
-                        
                         const previewContainer = document.createElement('div');
                         previewContainer.className = 'preview-img mt-3';
-                        
                         const previewImg = document.createElement('img');
                         previewImg.src = compressedImage;
                         previewImg.style.width = '100%';
                         previewImg.style.borderRadius = '12px';
                         previewImg.style.border = '2px solid #facc15';
                         previewImg.style.marginTop = '12px';
-                        
                         const previewText = document.createElement('p');
                         previewText.className = 'text-[8px] text-emerald-400 text-center mt-2';
                         previewText.innerHTML = `✅ ${tamanhoKB}KB - Clique em "Usar Imagem"`;
-                        
                         previewContainer.appendChild(previewImg);
                         previewContainer.appendChild(previewText);
                         pasteArea.appendChild(previewContainer);
                     }
-                    
                     vibrate();
                 };
-                
                 img.onerror = () => {
                     showToast("Erro ao processar imagem. Tente outra.", "❌");
                 };
-                
                 img.src = e.target.result;
             };
-            
             reader.onerror = () => {
                 showToast("Erro ao ler a imagem.", "❌");
             };
-            
             reader.readAsDataURL(blob);
         }
         
@@ -2176,10 +2071,8 @@
                 currentPhoto = pendingPasteImage;
                 document.getElementById('imgPreview').src = currentPhoto;
                 document.getElementById('previewContainer').classList.remove('hidden');
-                
                 const tamanhoKB = (pendingPasteImage.length / 1024).toFixed(0);
                 document.getElementById('tamanhoPreview').innerHTML = `📦 ${tamanhoKB}KB`;
-                
                 showToast(`Imagem adicionada! (${tamanhoKB}KB)`, "📸");
                 vibrate();
                 fecharModalColarImagem();
@@ -2215,8 +2108,6 @@
         
         window.fecharModalColarImagem = fecharModalColarImagem;
 
-        // ========== FUNÇÕES DE TEMA ==========
-        
         function alternarTema() {
             const body = document.body;
             const temaBtn = document.getElementById('temaBtn');
@@ -2428,44 +2319,23 @@
             finally { carregando = false; document.getElementById('loadingMore').classList.add('hidden'); }
         }
         
-        // ====== FUNÇÕES DE PESQUISA E ORDENAÇÃO ======
-        
         function ordenarCarros(carros, criterio) {
             const carrosCopy = [...carros];
-            
             switch(criterio) {
                 case 'modelo':
-                    return carrosCopy.sort((a, b) => {
-                        const modeloA = a.model || '';
-                        const modeloB = b.model || '';
-                        return modeloA.localeCompare(modeloB);
-                    });
+                    return carrosCopy.sort((a, b) => (a.model || '').localeCompare(b.model || ''));
                 case 'modelo-desc':
-                    return carrosCopy.sort((a, b) => {
-                        const modeloA = a.model || '';
-                        const modeloB = b.model || '';
-                        return modeloB.localeCompare(modeloA);
-                    });
+                    return carrosCopy.sort((a, b) => (b.model || '').localeCompare(a.model || ''));
                 case 'categoria':
                     return carrosCopy.sort((a, b) => {
                         const catA = a.category || '';
                         const catB = b.category || '';
-                        const modeloA = a.model || '';
-                        const modeloB = b.model || '';
-                        return catA.localeCompare(catB) || modeloA.localeCompare(modeloB);
+                        return catA.localeCompare(catB) || (a.model || '').localeCompare(b.model || '');
                     });
                 case 'quantidade':
-                    return carrosCopy.sort((a, b) => {
-                        const qtdA = a.qty || 1;
-                        const qtdB = b.qty || 1;
-                        return qtdB - qtdA;
-                    });
+                    return carrosCopy.sort((a, b) => (b.qty || 1) - (a.qty || 1));
                 case 'recente':
-                    return carrosCopy.sort((a, b) => {
-                        const dataA = a.createdAt || 0;
-                        const dataB = b.createdAt || 0;
-                        return dataB - dataA;
-                    });
+                    return carrosCopy.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
                 default:
                     return carrosCopy;
             }
@@ -2478,13 +2348,10 @@
                 const modelo = (car.model || '').toUpperCase();
                 const serie = (car.series || '').toUpperCase();
                 const categoria = (car.category || '').toUpperCase();
-                return modelo.includes(termoUpper) || 
-                       serie.includes(termoUpper) || 
-                       categoria.includes(termoUpper);
+                return modelo.includes(termoUpper) || serie.includes(termoUpper) || categoria.includes(termoUpper);
             });
         }
 
-        // ====== FUNÇÃO RENDER GARAGEM COM PESQUISA E ORDENAÇÃO ======
         function renderGaragemPaginada() {
             const cats = ['TODOS', 'STH', 'TH', 'MAINLINE', 'PREMIUM', 'PACK'];
             const filterContainer = document.getElementById('categoryFilters');
@@ -2492,7 +2359,6 @@
             const hwListContainer = document.getElementById('viewList');
             const resultadoBusca = document.getElementById('resultadoBusca');
             const inputBusca = document.getElementById('searchGaragem');
-            
             const termoBusca = inputBusca ? inputBusca.value.trim() : '';
             
             if (filterContainer) {
@@ -2501,25 +2367,19 @@
                 ).join('');
             }
             
-            // Aplica filtros e ordenação
             let carrosFiltrados = todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter);
-            
-            // Aplica busca
             if (termoBusca) {
                 carrosFiltrados = filtrarCarrosPorBusca(carrosFiltrados, termoBusca);
             }
             
-            // Aplica ordenação
             const selectOrdenar = document.getElementById('ordenarGaragem');
             const criterio = selectOrdenar ? selectOrdenar.value : 'modelo';
             carrosFiltrados = ordenarCarros(carrosFiltrados, criterio);
             
-            // Atualiza total
             if (totalSpan) {
                 totalSpan.innerText = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
             }
             
-            // Mostra resultado da busca
             if (resultadoBusca) {
                 const total = carrosFiltrados.length;
                 const totalGeral = todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter).length;
@@ -2530,7 +2390,6 @@
                 }
             }
             
-            // Mostra/esconde botão limpar busca
             const btnLimpar = document.getElementById('btnLimparBusca');
             if (btnLimpar) {
                 if (termoBusca.length > 0) {
@@ -2540,7 +2399,6 @@
                 }
             }
             
-            // Renderiza lista
             if (hwListContainer) {
                 if (carrosFiltrados.length === 0 && todosCarros.length === 0) {
                     hwListContainer.innerHTML = `<div class="hw-card p-8 text-center"><p class="text-zinc-500 text-[10px] uppercase font-black">🚗 Sua garagem está vazia!<br>Clique em NOVO para adicionar seu primeiro Hot Wheels</p></div>`;
@@ -2558,9 +2416,7 @@
                                 <p class="text-yellow-400 text-[8px] font-black uppercase mt-1">${car.category || 'Sem categoria'}</p>
                                 <div class="flex items-center justify-between mt-3">
                                     <span class="font-racing text-white text-sm"><span class="text-zinc-500 text-[8px]">QTD:</span> ${car.qty || 1}</span>
-                                    <button onclick="editCar('${car.id}', '${(car.model || '').replace(/'/g, "\\'")}', '${(car.series || '').replace(/'/g, "\\'")}', '${car.category || ''}', ${car.qty || 1})" class="edit-btn" title="Editar carro">
-                                        ✏️
-                                    </button>
+                                    <button onclick="editCar('${car.id}', '${(car.model || '').replace(/'/g, "\\'")}', '${(car.series || '').replace(/'/g, "\\'")}', '${car.category || ''}', ${car.qty || 1})" class="edit-btn" title="Editar carro">✏️</button>
                                 </div>
                             </div>
                         </div>`).join('');
@@ -2575,7 +2431,6 @@
             }
         }
 
-        // ====== FUNÇÃO LIMPAR BUSCA ======
         window.limparBusca = function() {
             const input = document.getElementById('searchGaragem');
             if (input) {
@@ -2587,12 +2442,10 @@
             }
         };
 
-        // ====== FUNÇÃO FILTRAR GARAGEM ======
         window.filtrarGaragem = function() {
             const input = document.getElementById('searchGaragem');
             const termo = input ? input.value.trim() : '';
             const btnLimpar = document.getElementById('btnLimparBusca');
-            
             if (btnLimpar) {
                 if (termo.length > 0) {
                     btnLimpar.classList.add('visible');
@@ -2603,7 +2456,6 @@
             renderGaragemPaginada();
         };
 
-        // ====== FUNÇÃO ORDENAR GARAGEM ======
         window.ordenarGaragem = function() {
             renderGaragemPaginada();
         };
@@ -2651,7 +2503,6 @@
                 showToast("Carro atualizado com sucesso!", "✏️");
                 vibrate();
                 closeEditModal();
-                
             } catch (error) {
                 console.error("Erro ao atualizar:", error);
                 showToast("Erro ao atualizar carro", "❌");
@@ -2840,13 +2691,11 @@
             document.getElementById('confirmTitle').innerText = title;
             document.getElementById('confirmText').innerText = msg;
             modal.style.display = 'flex';
-            
             document.getElementById('confirmOk').onclick = () => { 
                 modal.style.display = 'none'; 
                 if (callback) callback();
                 vibrate();
             };
-            
             document.getElementById('confirmCancel').onclick = () => { 
                 modal.style.display = 'none'; 
                 if (cancelCallback) cancelCallback();
@@ -3104,7 +2953,6 @@
         
         window.openLightbox = function(index, listType) {
             currentLightboxType = listType;
-            
             if (listType === 'garage') {
                 const filtered = todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter);
                 currentListForLightbox = filtered;
@@ -3128,7 +2976,6 @@
                 if (index < 0) index = 0;
                 lightboxIndex = index;
             }
-            
             if (currentListForLightbox.length > 0) {
                 updateLightbox();
                 document.getElementById('lightbox').style.display = 'flex';
@@ -3155,17 +3002,14 @@
                     return;
                 }
             }
-            
             const car = currentListForLightbox[lightboxIndex];
             if(!car) {
                 closeLightbox();
                 return;
             }
-            
             document.getElementById('lightboxImg').src = car.photo;
             document.getElementById('lightboxTitle').innerHTML = car.model || 'Modelo não informado';
             document.getElementById('lightboxCategory').innerHTML = car.category || '';
-            
             const actionArea = document.getElementById('lightboxActionArea');
             if (currentLightboxType === 'meus') {
                 actionArea.innerHTML = `<button onclick="toggleNegotiable('${car.id}', ${car.negotiable})" class="w-full py-5 rounded-2xl font-racing uppercase italic shadow-2xl ${car.negotiable ? 'bg-red-600 text-white' : 'bg-emerald-500 text-black'} active:scale-95 transition-all">${car.negotiable ? 'Remover Oferta' : 'Ofertar na Rede'}</button>`;
@@ -3284,15 +3128,46 @@
             previewImageFromFile(file);
         };
         
+        // ====== FUNÇÃO SWITCH TAB CORRIGIDA - FORÇA ATUALIZAÇÃO ======
         window.switchTab = function(t) { 
             if (!checkUnsavedCar() && t !== 'novo') return;
-            ['novo','garagem','negociaveis'].forEach(x => { const section = document.getElementById('section'+x.charAt(0).toUpperCase()+x.slice(1)); const tab = document.getElementById('tab'+x.charAt(0).toUpperCase()+x.slice(1)); if (section) section.classList.add('hidden'); if (tab) tab.classList.remove('active'); }); 
-            const newSection = document.getElementById('section'+t.charAt(0).toUpperCase()+t.slice(1)); const newTab = document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)); if (newSection) newSection.classList.remove('hidden'); if (newTab) newTab.classList.add('active');
+            ['novo','garagem','negociaveis'].forEach(x => { 
+                const section = document.getElementById('section'+x.charAt(0).toUpperCase()+x.slice(1)); 
+                const tab = document.getElementById('tab'+x.charAt(0).toUpperCase()+x.slice(1)); 
+                if (section) section.classList.add('hidden'); 
+                if (tab) tab.classList.remove('active'); 
+            }); 
+            const newSection = document.getElementById('section'+t.charAt(0).toUpperCase()+t.slice(1)); 
+            const newTab = document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)); 
+            if (newSection) newSection.classList.remove('hidden'); 
+            if (newTab) newTab.classList.add('active');
             if(t === 'negociaveis') switchSubTab('buscar');
             if(t === 'garagem') { 
                 currentFilter = 'TODOS'; 
                 albumPaginaAtual = 0;
-                recarregarGaragemCompleta(); 
+                // FORÇA O RECARREGAMENTO COMPLETO DA GARAGEM
+                recarregarGaragemCompleta();
+                // TAMBÉM FORÇA A ATUALIZAÇÃO DO SNAPSHOT
+                if (unsubscribeGarage) {
+                    unsubscribeGarage();
+                    const user = auth.currentUser;
+                    if (user) {
+                        const q = query(collection(db, "garagens", user.uid, "miniaturas"), orderBy("createdAt", "desc"));
+                        unsubscribeGarage = onSnapshot(q, async (snap) => { 
+                            const novosCarros = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            const novosMap = new Map(novosCarros.map(c => [c.id, c]));
+                            for (let i = 0; i < todosCarros.length; i++) {
+                                const novo = novosMap.get(todosCarros[i].id);
+                                if (novo) { todosCarros[i] = { ...todosCarros[i], ...novo }; }
+                            }
+                            novosCarros.forEach(c => { if (!todosCarros.find(ex => ex.id === c.id)) { todosCarros.push(c); } });
+                            todosCarros = todosCarros.filter(c => novosMap.has(c.id));
+                            renderGaragemPaginada();
+                            if (document.getElementById('contentMeus').style.display !== 'none') { renderNegociosPaginados(); }
+                        });
+                    }
+                }
+                showToast("🔄 Garagem atualizada!", "🏁");
             }
             vibrate();
         };
@@ -3382,20 +3257,15 @@
                 showToast("Faça login primeiro!", "⚠️");
                 return;
             }
-            
             if (todosCarros.length === 0) {
                 showToast("Sua garagem está vazia!", "⚠️");
                 return;
             }
-            
             qrCodeLink = `https://garagem164.github.io/garagem1-64/colecao.html?uid=${user.uid}`;
-            
             const modal = document.getElementById('qrModal');
             modal.style.display = 'flex';
-            
             const container = document.getElementById('qrCodeContainer');
             container.innerHTML = '';
-            
             try {
                 qrCodeInstance = new QRCode(container, {
                     text: qrCodeLink,
@@ -3405,13 +3275,10 @@
                     colorLight: '#ffffff',
                     correctLevel: QRCode.CorrectLevel.H
                 });
-                
                 setTimeout(() => {
                     adicionarLogoQRCode();
                 }, 100);
-                
                 showToast("✅ QR Code gerado!", "📱");
-                
             } catch (error) {
                 console.error('Erro ao gerar QR Code:', error);
                 showToast('❌ Erro ao gerar QR Code', '❌');
@@ -3435,12 +3302,10 @@
                 showToast('❌ QR Code não encontrado', '❌');
                 return;
             }
-            
             const link = document.createElement('a');
             link.download = `qr-code-colecao.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
-            
             showToast('✅ QR Code baixado!', '💾');
         };
 
@@ -3450,10 +3315,8 @@
                 showToast('❌ QR Code não encontrado', '❌');
                 return;
             }
-            
             try {
                 const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-                
                 if (navigator.share) {
                     const file = new File([blob], 'qr-code-colecao.png', { type: 'image/png' });
                     await navigator.share({
@@ -3479,17 +3342,14 @@
         function adicionarLogoQRCode() {
             const canvas = document.querySelector('#qrCodeContainer canvas');
             if (!canvas) return;
-            
             const ctx = canvas.getContext('2d');
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
             const logoSize = 36;
-            
             ctx.beginPath();
             ctx.arc(centerX, centerY, logoSize / 2 + 4, 0, 2 * Math.PI);
             ctx.fillStyle = '#ffffff';
             ctx.fill();
-            
             ctx.font = '28px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -3519,26 +3379,21 @@
                 showToast("Faça login primeiro!", "⚠️");
                 return;
             }
-            
             if (todosCarros.length === 0) {
                 showToast("Sua garagem está vazia!", "⚠️");
                 return;
             }
-            
             const btn = document.activeElement;
             const textoOriginal = btn ? btn.innerHTML : 'Compartilhar';
             if (btn) {
                 btn.disabled = true;
                 btn.innerHTML = '<span class="loading-spinner"></span> Gerando link...';
             }
-            
             try {
                 const perfilRef = doc(db, "perfis", user.uid);
                 const perfilDoc = await getDoc(perfilRef);
                 const displayName = perfilDoc.exists() ? perfilDoc.data().displayName : "Colecionador";
-                
                 const totalUnidades = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
-                
                 const carrosPublicos = todosCarros.map(c => ({
                     model: c.model,
                     series: c.series || '',
@@ -3546,7 +3401,6 @@
                     qty: c.qty || 1,
                     photo: c.photo
                 }));
-                
                 const publicRef = doc(db, "publicCollections", user.uid);
                 await setDoc(publicRef, {
                     displayName: displayName,
@@ -3555,13 +3409,10 @@
                     carros: carrosPublicos,
                     updatedAt: Date.now()
                 });
-                
                 const link = `https://garagem164.github.io/garagem1-64/colecao.html?uid=${user.uid}`;
                 const msg = `🏎️ *MINHA COLEÇÃO HOT WHEELS* 🏎️\n\n📦 ${todosCarros.length} carros\n📊 ${totalUnidades} unidades\n\n🔗 ${link}\n\n🏁 Garagem 1:64`;
-                
                 window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
                 showToast("✅ Link gerado e WhatsApp aberto!", "📱");
-                
             } catch (error) {
                 console.error("Erro:", error);
                 showToast("❌ Erro ao gerar link. Tente novamente.", "❌");
