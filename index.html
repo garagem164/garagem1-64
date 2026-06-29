@@ -1802,27 +1802,29 @@
                 const itemExistente = todosCarros.find(car => car.model === modelo);
                 
                 if (itemExistente) {
-                    customConfirm("Modelo já existe", `Você já possui "${modelo}". Deseja somar +${quantidade} unidades?`, async () => {
-                        await updateDoc(doc(db, "garagens", auth.currentUser.uid, "miniaturas", itemExistente.id), { 
-                            qty: increment(quantidade) 
-                        });
-                        // Atualiza a lista local imediatamente
-                        const index = todosCarros.findIndex(c => c.id === itemExistente.id);
-                        if (index !== -1) {
-                            todosCarros[index].qty = (todosCarros[index].qty || 1) + quantidade;
-                        }
-                        renderGaragemPaginada();
-                        showToast(`Quantidade atualizada! Total: ${(itemExistente.qty || 1) + quantidade}`, "➕");
-                        vibrate();
-                        limparFormulario();
-                        btn.disabled = false;
-                        btn.innerHTML = 'Salvar na Garagem';
-                        // FICA NA ABA NOVO
+                    // Atualiza no Firestore
+                    await updateDoc(doc(db, "garagens", auth.currentUser.uid, "miniaturas", itemExistente.id), { 
+                        qty: increment(quantidade) 
                     });
+                    
+                    // Atualiza a lista local imediatamente
+                    const index = todosCarros.findIndex(c => c.id === itemExistente.id);
+                    if (index !== -1) {
+                        todosCarros[index].qty = (todosCarros[index].qty || 1) + quantidade;
+                    }
+                    
+                    // Força a atualização da interface
+                    renderGaragemPaginada();
+                    
+                    showToast(`Quantidade atualizada! Total: ${(itemExistente.qty || 1) + quantidade}`, "➕");
+                    vibrate();
+                    limparFormulario();
                     btn.disabled = false;
                     btn.innerHTML = 'Salvar na Garagem';
+                    // FICA NA ABA NOVO
                 } else {
-                    await addDoc(collection(db, "garagens", auth.currentUser.uid, "miniaturas"), { 
+                    // Adiciona ao Firestore
+                    const docRef = await addDoc(collection(db, "garagens", auth.currentUser.uid, "miniaturas"), { 
                         model: modelo,
                         series: serie,
                         category: categoria,
@@ -1831,9 +1833,10 @@
                         photo: currentPhoto,
                         createdAt: Date.now() 
                     });
-                    // Adiciona o novo carro à lista local imediatamente
+                    
+                    // Adiciona o novo carro à lista local imediatamente com o ID real
                     const novoCarro = {
-                        id: 'temp_' + Date.now(),
+                        id: docRef.id,
                         model: modelo,
                         series: serie,
                         category: categoria,
@@ -1843,7 +1846,10 @@
                         createdAt: Date.now()
                     };
                     todosCarros.unshift(novoCarro);
+                    
+                    // Força a atualização da interface
                     renderGaragemPaginada();
+                    
                     showToast(`"${modelo}" salvo na garagem!`, "🏁");
                     vibrate();
                     limparFormulario();
