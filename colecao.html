@@ -439,11 +439,38 @@
             border-radius: 20px;
             z-index: 20;
         }
+        
+        /* Estilo para o botão de download */
+        .btn-download {
+            background: linear-gradient(135deg, #facc15, #f59e0b);
+            color: #000;
+            padding: 14px 28px;
+            border-radius: 40px;
+            font-weight: 900;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+            font-size: 14px;
+            box-shadow: 0 4px 20px rgba(250, 204, 21, 0.4);
+            border: none;
+            cursor: pointer;
+        }
+        .btn-download:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 30px rgba(250, 204, 21, 0.6);
+        }
+        .btn-download:active { 
+            transform: scale(0.95); 
+        }
+
         @media (max-width: 480px) {
             .header-title { font-size: 1.2rem; }
             .album-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
             .album-card .img-container { height: 120px; }
             .btn-app { font-size: 12px; padding: 10px 16px; }
+            .btn-download { font-size: 12px; padding: 12px 20px; }
             .btn-tema { width: 38px; height: 38px; font-size: 16px; }
             .lightbox-nav { width: 40px; height: 40px; font-size: 20px; }
             .lightbox-nav-left { left: 8px; }
@@ -482,13 +509,20 @@
             </div>
 
             <div id="colecao" style="display: none;">
-                <!-- Info do colecionador -->
+                <!-- Info do colecionador COM BOTÃO DE DOWNLOAD ABAIXO -->
                 <div class="text-center mb-4">
                     <h2 id="nomeColecionador" class="text-2xl font-racing text-yellow-400">-</h2>
                     <div class="flex justify-center gap-2 flex-wrap mt-2">
                         <span class="total-badge">📦 <span id="totalCarros">0</span> carros</span>
                         <span class="total-badge">📊 <span id="totalUnidades">0</span> unidades</span>
                         <span class="total-badge">🔄 <span id="atualizado">-</span></span>
+                    </div>
+                    
+                    <!-- BOTÃO DE DOWNLOAD - POSICIONADO ABAIXO DA DATA -->
+                    <div class="mt-4">
+                        <a href="https://garagem164.github.io/garagem1-64/" target="_blank" rel="noopener noreferrer" class="btn-download">
+                            📲 Quer ter sua própria coleção? Conheça o App!
+                        </a>
                     </div>
                 </div>
 
@@ -514,12 +548,12 @@
                     </button>
                 </div>
 
-                <!-- Chamada para o app -->
-                <div class="mt-6 text-center">
-                    <button onclick="irParaApp()" class="inline-block bg-yellow-400/10 border border-yellow-400/20 text-yellow-400 font-bold py-3 px-6 rounded-2xl text-sm uppercase tracking-widest hover:bg-yellow-400/20 transition-all cursor-pointer">
+                <!-- Remove o botão duplicado do rodapé -->
+                <!-- <div class="mt-6 text-center">
+                    <a href="https://garagem164.github.io/garagem1-64/download.html" target="_blank" rel="noopener noreferrer" class="btn-download">
                         📲 Quer ter sua própria coleção? Conheça o App!
-                    </button>
-                </div>
+                    </a>
+                </div> -->
             </div>
 
             <div id="erro" style="display: none;" class="text-center py-12">
@@ -591,6 +625,7 @@
                 }, 3000);
             }
             
+            // Redireciona para a página principal do app
             window.location.href = 'https://garagem164.github.io/garagem1-64/';
         };
 
