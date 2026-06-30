@@ -348,7 +348,7 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
             width: 48px;
             height: 48px;
             border-radius: 50%;
@@ -360,10 +360,11 @@
             cursor: pointer;
             font-size: 28px;
             transition: all 0.2s;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
         }
         .lightbox-close:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(250, 204, 21, 0.4);
+            border-color: var(--hw-yellow);
             transform: scale(1.1);
         }
         .lightbox-img {
@@ -373,35 +374,60 @@
             border-radius: 12px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
         }
+        
+        /* ====== SETAS DE NAVEGAÇÃO MELHORADAS ====== */
         .lightbox-nav {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.1);
-            width: 50px;
-            height: 50px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 28px;
+            font-size: 32px;
             z-index: 20;
             cursor: pointer;
-            transition: all 0.2s;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
             user-select: none;
+            box-shadow: 0 0 30px rgba(250, 204, 21, 0.1);
         }
         .lightbox-nav:hover {
-            background: rgba(250, 204, 21, 0.4);
+            background: rgba(250, 204, 21, 0.3);
             border-color: var(--hw-yellow);
-            transform: translateY(-50%) scale(1.1);
+            transform: translateY(-50%) scale(1.15);
+            box-shadow: 0 0 40px rgba(250, 204, 21, 0.3);
         }
         .lightbox-nav:active {
             transform: translateY(-50%) scale(0.95);
         }
-        .lightbox-nav-left { left: 15px; }
-        .lightbox-nav-right { right: 15px; }
+        .lightbox-nav-left { 
+            left: 20px; 
+        }
+        .lightbox-nav-right { 
+            right: 20px; 
+        }
+        
+        /* Seta esquerda com ícone mais visível */
+        .lightbox-nav-left::before {
+            content: "◀";
+            font-size: 28px;
+            filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.3));
+        }
+        .lightbox-nav-right::before {
+            content: "▶";
+            font-size: 28px;
+            filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.3));
+        }
+        .lightbox-nav span {
+            display: none;
+        }
+        
         .lightbox-info {
             position: absolute;
             bottom: 40px;
@@ -409,7 +435,7 @@
             transform: translateX(-50%);
             text-align: center;
             color: white;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(10px);
             padding: 12px 28px;
             border-radius: 40px;
@@ -431,13 +457,15 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(255, 255, 255, 0.8);
             font-size: 14px;
             font-weight: 700;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 6px 14px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
             border-radius: 20px;
             z-index: 20;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         /* Estilo para o botão de download */
@@ -465,6 +493,41 @@
             transform: scale(0.95); 
         }
 
+        /* ====== RESPONSIVIDADE ====== */
+        @media (max-width: 768px) {
+            .lightbox-nav {
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+            .lightbox-nav-left { 
+                left: 10px; 
+            }
+            .lightbox-nav-right { 
+                right: 10px; 
+            }
+            .lightbox-nav-left::before,
+            .lightbox-nav-right::before {
+                font-size: 22px;
+            }
+            .lightbox-close {
+                width: 44px;
+                height: 44px;
+                font-size: 24px;
+                top: 15px;
+                right: 15px;
+            }
+            .lightbox-img { 
+                max-height: 65vh; 
+            }
+            .lightbox-counter {
+                font-size: 12px;
+                padding: 6px 14px;
+                top: 15px;
+                left: 15px;
+            }
+        }
+        
         @media (max-width: 480px) {
             .header-title { font-size: 1.2rem; }
             .album-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -472,18 +535,64 @@
             .btn-app { font-size: 12px; padding: 10px 16px; }
             .btn-download { font-size: 12px; padding: 12px 20px; }
             .btn-tema { width: 38px; height: 38px; font-size: 16px; }
-            .lightbox-nav { width: 40px; height: 40px; font-size: 20px; }
-            .lightbox-nav-left { left: 8px; }
-            .lightbox-nav-right { right: 8px; }
+            
+            /* Setas ainda maiores em dispositivos móveis */
+            .lightbox-nav {
+                width: 55px;
+                height: 55px;
+                font-size: 28px;
+                background: rgba(0, 0, 0, 0.8);
+                border-width: 2px;
+            }
+            .lightbox-nav-left { 
+                left: 8px; 
+            }
+            .lightbox-nav-right { 
+                right: 8px; 
+            }
+            .lightbox-nav-left::before,
+            .lightbox-nav-right::before {
+                font-size: 26px;
+            }
             .lightbox-info .modelo { font-size: 14px; }
-            .lightbox-close { width: 40px; height: 40px; font-size: 22px; top: 12px; right: 12px; }
-            .lightbox-img { max-height: 60vh; }
+            .lightbox-close { 
+                width: 44px; 
+                height: 44px; 
+                font-size: 22px; 
+                top: 12px; 
+                right: 12px; 
+            }
+            .lightbox-img { 
+                max-height: 60vh; 
+            }
+            .lightbox-counter {
+                font-size: 11px;
+                padding: 5px 12px;
+                top: 12px;
+                left: 12px;
+            }
         }
+        
         @media (max-width: 380px) {
             .album-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
             .album-card .img-container { height: 100px; }
             .album-card-title { font-size: 9px; }
             .album-card-sub { font-size: 8px; }
+            
+            .lightbox-nav {
+                width: 48px;
+                height: 48px;
+            }
+            .lightbox-nav-left { 
+                left: 5px; 
+            }
+            .lightbox-nav-right { 
+                right: 5px; 
+            }
+            .lightbox-nav-left::before,
+            .lightbox-nav-right::before {
+                font-size: 22px;
+            }
         }
     </style>
 </head>
@@ -520,7 +629,7 @@
                     
                     <!-- BOTÃO DE DOWNLOAD - POSICIONADO ABAIXO DA DATA -->
                     <div class="mt-4">
-                        <a href="https://garagem164.github.io/garagem1-64/" target="_blank" rel="noopener noreferrer" class="btn-download">
+                        <a href="https://garagem164.github.io/garagem1-64/download.html" target="_blank" rel="noopener noreferrer" class="btn-download">
                             📲 Quer ter sua própria coleção? Conheça o App!
                         </a>
                     </div>
@@ -547,13 +656,6 @@
                         📋 Copiar Link
                     </button>
                 </div>
-
-                <!-- Remove o botão duplicado do rodapé -->
-                <!-- <div class="mt-6 text-center">
-                    <a href="https://garagem164.github.io/garagem1-64/download.html" target="_blank" rel="noopener noreferrer" class="btn-download">
-                        📲 Quer ter sua própria coleção? Conheça o App!
-                    </a>
-                </div> -->
             </div>
 
             <div id="erro" style="display: none;" class="text-center py-12">
@@ -568,9 +670,9 @@
     <div id="lightbox" onclick="fecharLightbox(event)">
         <div class="lightbox-counter" id="lightboxCounter">1 / 1</div>
         <div class="lightbox-close" onclick="fecharLightbox()">✕</div>
-        <div class="lightbox-nav lightbox-nav-left" onclick="event.stopPropagation(); mudarImagem(-1)">‹</div>
+        <div class="lightbox-nav lightbox-nav-left" onclick="event.stopPropagation(); mudarImagem(-1)"></div>
         <img id="lightboxImg" class="lightbox-img" src="" alt="Visualização">
-        <div class="lightbox-nav lightbox-nav-right" onclick="event.stopPropagation(); mudarImagem(1)">›</div>
+        <div class="lightbox-nav lightbox-nav-right" onclick="event.stopPropagation(); mudarImagem(1)"></div>
         <div class="lightbox-info">
             <div class="modelo" id="lightboxModelo">-</div>
             <div class="categoria" id="lightboxCategoria">-</div>
