@@ -1667,14 +1667,12 @@
 
     <!-- ====== REGISTRO DO SERVICE WORKER ====== -->
     <script>
-        // Remove splash screen após carregar
         window.addEventListener('load', () => {
             setTimeout(() => {
                 document.getElementById('splash-screen').classList.add('hidden');
             }, 800);
         });
 
-        // Registro do Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js?v=2')
@@ -1720,13 +1718,11 @@
         
         let deferredPrompt = null;
 
-        // Evento disparado quando o PWA está pronto para ser instalado
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
             console.log('✅ PWA pronto para instalação');
             
-            // Mostra o banner de instalação
             setTimeout(() => {
                 const dismissed = localStorage.getItem('installBannerDismissed');
                 if (!dismissed || (Date.now() - parseInt(dismissed) > 7 * 24 * 60 * 60 * 1000)) {
@@ -1738,7 +1734,6 @@
             }, 3000);
         });
 
-        // Função para instalar o app
         window.instalarApp = async function() {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
@@ -1755,32 +1750,27 @@
             }
         };
 
-        // Fechar banner de instalação
         window.fecharBannerInstalacao = function() {
             document.getElementById('installBanner').classList.remove('show');
             localStorage.setItem('installBannerDismissed', Date.now());
         };
 
-        // Detecta quando o app foi instalado
         window.addEventListener('appinstalled', () => {
             showToast('🎉 Obrigado por instalar o Garagem 1:64!', '🏎️');
             document.getElementById('installBanner').classList.remove('show');
         });
 
-        // Verifica se já está instalado (modo standalone)
         if (window.matchMedia('(display-mode: standalone)').matches) {
             document.getElementById('installBanner').classList.remove('show');
             console.log('✅ App já está instalado');
         }
 
-        // Monitora mudanças no modo de exibição
         window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
             if (e.matches) {
                 document.getElementById('installBanner').classList.remove('show');
             }
         });
 
-        // Função showToast global
         window.showToast = window.showToast || function(msg, icon = '✨') {
             const toast = document.getElementById('hwToast');
             if (toast) {
@@ -1825,6 +1815,7 @@
         let carregando = false;
         let temMaisCarros = true;
         let todosCarros = [];
+        window.listaFiltradaAtual = [];
         
         let currentView = 'LISTA';
         let albumPaginaAtual = 0;
@@ -2083,7 +2074,7 @@
             }, 100);
         }
 
-        // ========== FUNÇÃO EXCLUIR CORRIGIDA ==========
+        // ========== FUNÇÃO EXCLUIR ==========
         window.removeHW = async function(id) { 
             if (!id) {
                 showToast("Erro: ID do carro não encontrado", "❌");
@@ -2102,19 +2093,12 @@
                         }
                         
                         await deleteDoc(doc(db, "garagens", user.uid, "miniaturas", id)); 
-                        
-                        // Remove da lista local
                         todosCarros = todosCarros.filter(c => c.id !== id);
-                        
-                        // Atualiza a interface
                         renderGaragemPaginada();
-                        
-                        // Atualiza o total
                         const totalSpan = document.getElementById('totalCount');
                         if (totalSpan) {
                             totalSpan.innerText = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
                         }
-                        
                         showToast("Item removido com sucesso!", "🗑️"); 
                         vibrate();
                     } catch (error) {
@@ -2496,125 +2480,275 @@
             limparCache();
         }
 
+        // ====== FUNÇÃO ALTERNAR VISUALIZAÇÃO ======
         function alternarVisualizacao(view) {
             currentView = view;
             const viewList = document.getElementById('viewList');
             const viewAlbum = document.getElementById('viewAlbum');
             const btnList = document.getElementById('viewListBtn');
             const btnAlbum = document.getElementById('viewAlbumBtn');
+            
             if (view === 'LISTA') {
                 viewList.style.display = 'grid';
                 viewAlbum.style.display = 'none';
                 btnList.classList.add('active');
                 btnAlbum.classList.remove('active');
-                renderGaragemPaginada();
                 localStorage.setItem('visualizacao', 'LISTA');
             } else {
                 viewList.style.display = 'none';
                 viewAlbum.style.display = 'block';
                 btnList.classList.remove('active');
                 btnAlbum.classList.add('active');
-                renderAlbum();
                 localStorage.setItem('visualizacao', 'ALBUM');
             }
+            renderGaragemPaginada();
         }
-        
+
+        // ====== FUNÇÃO RENDER ÁLBUM ======
         function renderAlbum() {
-            const filtered = todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter);
-            totalPaginasAlbum = Math.ceil(filtered.length / ITENS_POR_PAGINA_ALBUM);
-            if (albumPaginaAtual >= totalPaginasAlbum && totalPaginasAlbum > 0) albumPaginaAtual = totalPaginasAlbum - 1;
+            const filtered = window.listaFiltradaAtual || todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter);
+            
+            const inputBusca = document.getElementById('searchGaragem');
+            const termoBusca = inputBusca ? inputBusca.value.trim() : '';
+            let carrosAlbum = filtered;
+            if (termoBusca) {
+                carrosAlbum = filtrarCarrosPorBusca(carrosAlbum, termoBusca);
+            }
+            
+            const selectOrdenar = document.getElementById('ordenarGaragem');
+            const criterio = selectOrdenar ? selectOrdenar.value : 'modelo';
+            carrosAlbum = ordenarCarros(carrosAlbum, criterio);
+            
+            totalPaginasAlbum = Math.ceil(carrosAlbum.length / ITENS_POR_PAGINA_ALBUM);
+            if (totalPaginasAlbum === 0) totalPaginasAlbum = 1;
+            if (albumPaginaAtual >= totalPaginasAlbum) albumPaginaAtual = totalPaginasAlbum - 1;
             if (albumPaginaAtual < 0) albumPaginaAtual = 0;
+            
             const inicio = albumPaginaAtual * ITENS_POR_PAGINA_ALBUM;
             const fim = inicio + ITENS_POR_PAGINA_ALBUM;
-            const carrosPagina = filtered.slice(inicio, fim);
+            const carrosPagina = carrosAlbum.slice(inicio, fim);
+            
             const albumGrid = document.getElementById('albumGrid');
             if (albumGrid) {
-                if (filtered.length === 0) {
+                if (carrosAlbum.length === 0) {
                     albumGrid.innerHTML = `<div class="col-span-2 text-center p-8 text-zinc-500">🚗 Nenhum carro encontrado</div>`;
                 } else {
                     albumGrid.innerHTML = carrosPagina.map((car) => {
-                        const globalIndex = filtered.findIndex(c => c.id === car.id);
+                        const globalIndex = carrosAlbum.findIndex(c => c.id === car.id);
                         return `<div class="album-card" onclick="openLightbox(${globalIndex}, 'garage')"><img src="${car.photo}" loading="lazy"><div class="album-card-title">${car.model}</div></div>`;
                     }).join('');
                 }
             }
+            
             const pageInfo = document.getElementById('albumPageInfo');
             if (pageInfo) {
-                if (totalPaginasAlbum === 0) {
+                if (carrosAlbum.length === 0) {
                     pageInfo.innerHTML = `Página 0 de 0`;
                 } else {
                     pageInfo.innerHTML = `Página ${albumPaginaAtual + 1} de ${totalPaginasAlbum}`;
                 }
             }
+            
             const prevBtn = document.getElementById('albumPrevBtn');
             const nextBtn = document.getElementById('albumNextBtn');
             if (prevBtn) {
-                if (albumPaginaAtual === 0 || totalPaginasAlbum === 0) prevBtn.classList.add('disabled');
+                if (albumPaginaAtual === 0 || carrosAlbum.length === 0) prevBtn.classList.add('disabled');
                 else prevBtn.classList.remove('disabled');
             }
             if (nextBtn) {
-                if (albumPaginaAtual >= totalPaginasAlbum - 1 || totalPaginasAlbum === 0) nextBtn.classList.add('disabled');
+                if (albumPaginaAtual >= totalPaginasAlbum - 1 || carrosAlbum.length === 0) nextBtn.classList.add('disabled');
                 else nextBtn.classList.remove('disabled');
             }
         }
-        
-        function albumPaginaAnterior() {
-            if (albumPaginaAtual > 0) { albumPaginaAtual--; renderAlbum(); }
-        }
-        
-        function albumProximaPagina() {
-            if (albumPaginaAtual < totalPaginasAlbum - 1) { albumPaginaAtual++; renderAlbum(); }
+
+        // ====== FUNÇÃO RENDER GARAGEM ======
+        function renderGaragemPaginada() {
+            const cats = ['TODOS', 'STH', 'TH', 'MAINLINE', 'PREMIUM', 'PACK'];
+            const filterContainer = document.getElementById('categoryFilters');
+            const totalSpan = document.getElementById('totalCount');
+            const hwListContainer = document.getElementById('viewList');
+            const resultadoBusca = document.getElementById('resultadoBusca');
+            const inputBusca = document.getElementById('searchGaragem');
+            
+            const termoBusca = inputBusca ? inputBusca.value.trim() : '';
+            
+            if (filterContainer) {
+                filterContainer.innerHTML = cats.map(c => 
+                    `<button onclick="setFilter('${c}')" class="filter-btn ${currentFilter === c ? 'active' : ''}">${c}</button>`
+                ).join('');
+            }
+            
+            let carrosFiltrados = todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter);
+            
+            if (termoBusca) {
+                carrosFiltrados = filtrarCarrosPorBusca(carrosFiltrados, termoBusca);
+            }
+            
+            const selectOrdenar = document.getElementById('ordenarGaragem');
+            const criterio = selectOrdenar ? selectOrdenar.value : 'modelo';
+            carrosFiltrados = ordenarCarros(carrosFiltrados, criterio);
+            
+            window.listaFiltradaAtual = carrosFiltrados;
+            
+            if (totalSpan) {
+                totalSpan.innerText = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
+            }
+            
+            if (resultadoBusca) {
+                const total = carrosFiltrados.length;
+                const totalGeral = todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter).length;
+                if (termoBusca) {
+                    resultadoBusca.innerHTML = `🔍 <span class="highlight">${total}</span> de ${totalGeral} modelo(s) encontrado(s)`;
+                } else {
+                    resultadoBusca.innerHTML = `📦 ${totalGeral} modelo(s)`;
+                }
+            }
+            
+            const btnLimpar = document.getElementById('btnLimparBusca');
+            if (btnLimpar) {
+                if (termoBusca.length > 0) {
+                    btnLimpar.classList.add('visible');
+                } else {
+                    btnLimpar.classList.remove('visible');
+                }
+            }
+            
+            if (hwListContainer) {
+                if (carrosFiltrados.length === 0 && todosCarros.length === 0) {
+                    hwListContainer.innerHTML = `<div class="hw-card p-8 text-center"><p class="text-zinc-500 text-[10px] uppercase font-black">🚗 Sua garagem está vazia!<br>Clique em NOVO para adicionar seu primeiro Hot Wheels</p></div>`;
+                } else if (carrosFiltrados.length === 0) {
+                    hwListContainer.innerHTML = `<div class="hw-card p-8 text-center"><p class="text-zinc-500 text-[10px] uppercase font-black">🔍 Nenhum carro encontrado para "${termoBusca}"</p></div>`;
+                } else {
+                    hwListContainer.innerHTML = carrosFiltrados.map((car, i) => {
+                        return `
+                            <div class="hw-card p-4 flex gap-4 items-center">
+                                <img src="${car.photo}" onclick="openLightbox(${i}, 'garage')" class="w-20 h-20 rounded-2xl object-cover shadow-lg cursor-pointer">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-start">
+                                        <h4 class="font-black uppercase text-xs truncate text-white">${car.model || 'Sem modelo'}</h4>
+                                        <button onclick="removeHW('${car.id}')" class="delete-btn" title="Remover carro">✕</button>
+                                    </div>
+                                    <p class="text-yellow-400 text-[8px] font-black uppercase mt-1">${car.category || 'Sem categoria'}</p>
+                                    <div class="flex items-center justify-between mt-3">
+                                        <span class="font-racing text-white text-sm"><span class="text-zinc-500 text-[8px]">QTD:</span> ${car.qty || 1}</span>
+                                        <button onclick="editCar('${car.id}', '${(car.model || '').replace(/'/g, "\\'")}', '${(car.series || '').replace(/'/g, "\\'")}', '${car.category || ''}', ${car.qty || 1})" class="edit-btn" title="Editar carro">✏️</button>
+                                    </div>
+                                </div>
+                            </div>`;
+                    }).join('');
+                }
+            }
+            
+            renderAlbum();
+            
+            if (document.getElementById('lightbox').style.display === 'flex' && currentLightboxType === 'garage') {
+                if (window.listaFiltradaAtual && window.listaFiltradaAtual.length > 0) {
+                    currentListForLightbox = window.listaFiltradaAtual;
+                    if (lightboxIndex >= currentListForLightbox.length) {
+                        lightboxIndex = currentListForLightbox.length - 1;
+                    }
+                    if (lightboxIndex < 0) lightboxIndex = 0;
+                    updateLightbox();
+                }
+            }
         }
 
-        async function carregarGaragemPaginada(resetar = true) {
-            const user = auth.currentUser;
-            if (!user || carregando) return;
-            if (resetar) {
-                ultimoDoc = null;
-                temMaisCarros = true;
-                todosCarros = [];
-                document.getElementById('btnCarregarMais').classList.add('hidden');
-                const cacheKey = `cache_garagem_${user.uid}_${currentFilter}`;
-                const cacheData = lerCache(cacheKey);
-                if (cacheData && cacheData.length > 0) {
-                    todosCarros = cacheData;
-                    renderGaragemPaginada();
-                    if (currentView === 'ALBUM') renderAlbum();
+        // ====== FUNÇÃO OPEN LIGHTBOX ======
+        window.openLightbox = function(index, listType) {
+            currentLightboxType = listType;
+            
+            if (listType === 'garage') {
+                const filtered = window.listaFiltradaAtual || todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter);
+                
+                const inputBusca = document.getElementById('searchGaragem');
+                const termoBusca = inputBusca ? inputBusca.value.trim() : '';
+                let carros = filtered;
+                if (termoBusca) {
+                    carros = filtrarCarrosPorBusca(carros, termoBusca);
+                }
+                
+                const selectOrdenar = document.getElementById('ordenarGaragem');
+                const criterio = selectOrdenar ? selectOrdenar.value : 'modelo';
+                carros = ordenarCarros(carros, criterio);
+                
+                currentListForLightbox = carros;
+                if (index >= currentListForLightbox.length) {
+                    index = currentListForLightbox.length - 1;
+                }
+                if (index < 0) index = 0;
+                lightboxIndex = index;
+                window.listaFiltradaAtual = carros;
+            } else if (listType === 'meus') {
+                currentListForLightbox = [...todosCarros];
+                if (index >= currentListForLightbox.length) {
+                    index = currentListForLightbox.length - 1;
+                }
+                if (index < 0) index = 0;
+                lightboxIndex = index;
+            } else {
+                currentListForLightbox = globalResults;
+                if (index >= currentListForLightbox.length) {
+                    index = currentListForLightbox.length - 1;
+                }
+                if (index < 0) index = 0;
+                lightboxIndex = index;
+            }
+            
+            if (currentListForLightbox.length > 0) {
+                updateLightbox();
+                document.getElementById('lightbox').style.display = 'flex';
+            } else {
+                showToast("Nenhum carro encontrado", "⚠️");
+            }
+        };
+        
+        window.closeLightbox = function() { document.getElementById('lightbox').style.display = 'none'; };
+        
+        window.changeLightboxImg = function(dir) { 
+            if(currentListForLightbox.length === 0) return; 
+            lightboxIndex = (lightboxIndex + dir + currentListForLightbox.length) % currentListForLightbox.length; 
+            updateLightbox(); 
+        };
+
+        function updateLightbox() {
+            if (!currentListForLightbox || currentListForLightbox.length === 0 || lightboxIndex >= currentListForLightbox.length) {
+                if (currentListForLightbox && currentListForLightbox.length > 0) {
+                    lightboxIndex = currentListForLightbox.length - 1;
+                } else {
+                    closeLightbox();
+                    showToast("Lista de carros vazia", "⚠️");
                     return;
                 }
             }
-            if (!temMaisCarros) return;
-            carregando = true;
-            document.getElementById('loadingMore').classList.remove('hidden');
-            try {
-                let q;
-                if (ultimoDoc) {
-                    q = query(collection(db, "garagens", user.uid, "miniaturas"), orderBy("createdAt", "desc"), startAfter(ultimoDoc), limit(ITENS_POR_PAGINA));
-                } else {
-                    q = query(collection(db, "garagens", user.uid, "miniaturas"), orderBy("createdAt", "desc"), limit(ITENS_POR_PAGINA));
-                }
-                const snapshot = await getDocs(q);
-                if (snapshot.empty) {
-                    temMaisCarros = false;
-                    document.getElementById('btnCarregarMais').classList.add('hidden');
-                } else {
-                    ultimoDoc = snapshot.docs[snapshot.docs.length - 1];
-                    const novosCarros = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                    todosCarros = [...todosCarros, ...novosCarros];
-                    const cacheKey = `cache_garagem_${user.uid}_${currentFilter}`;
-                    salvarCache(cacheKey, todosCarros);
-                    if (snapshot.docs.length < ITENS_POR_PAGINA) {
-                        temMaisCarros = false;
-                        document.getElementById('btnCarregarMais').classList.add('hidden');
-                    } else {
-                        document.getElementById('btnCarregarMais').classList.remove('hidden');
-                    }
-                }
-                renderGaragemPaginada();
-                if (currentView === 'ALBUM') renderAlbum();
-            } catch (error) { showToast("Erro ao carregar garagem", "❌"); }
-            finally { carregando = false; document.getElementById('loadingMore').classList.add('hidden'); }
+            const car = currentListForLightbox[lightboxIndex];
+            if(!car) {
+                closeLightbox();
+                return;
+            }
+            document.getElementById('lightboxImg').src = car.photo;
+            document.getElementById('lightboxTitle').innerHTML = car.model || 'Modelo não informado';
+            document.getElementById('lightboxCategory').innerHTML = car.category || '';
+            const actionArea = document.getElementById('lightboxActionArea');
+            if (currentLightboxType === 'meus') {
+                actionArea.innerHTML = `<button onclick="toggleNegotiable('${car.id}', ${car.negotiable})" class="w-full py-5 rounded-2xl font-racing uppercase italic shadow-2xl ${car.negotiable ? 'bg-red-600 text-white' : 'bg-emerald-500 text-black'} active:scale-95 transition-all">${car.negotiable ? 'Remover Oferta' : 'Ofertar na Rede'}</button>`;
+            } else {
+                actionArea.innerHTML = '';
+            }
         }
+
+        window.toggleNegotiable = async function(id, s) {
+            await updateDoc(doc(db, "garagens", auth.currentUser.uid, "miniaturas", id), { negotiable: !s });
+            showToast(s ? "Removido das ofertas" : "Ofertado na rede!", "🤝");
+            vibrate();
+            const index = todosCarros.findIndex(c => c.id === id);
+            if (index !== -1) { todosCarros[index].negotiable = !s; renderGaragemPaginada(); }
+            if (document.getElementById('lightbox').style.display === 'flex') { 
+                const idx = currentListForLightbox.findIndex(c => c.id === id); 
+                if (idx !== -1) { currentListForLightbox[idx].negotiable = !s; updateLightbox(); } 
+            }
+        };
+
+        // ====== FUNÇÕES DE PESQUISA E ORDENAÇÃO ======
         
         function ordenarCarros(carros, criterio) {
             const carrosCopy = [...carros];
@@ -2649,85 +2783,6 @@
             });
         }
 
-        function renderGaragemPaginada() {
-            const cats = ['TODOS', 'STH', 'TH', 'MAINLINE', 'PREMIUM', 'PACK'];
-            const filterContainer = document.getElementById('categoryFilters');
-            const totalSpan = document.getElementById('totalCount');
-            const hwListContainer = document.getElementById('viewList');
-            const resultadoBusca = document.getElementById('resultadoBusca');
-            const inputBusca = document.getElementById('searchGaragem');
-            const termoBusca = inputBusca ? inputBusca.value.trim() : '';
-            
-            if (filterContainer) {
-                filterContainer.innerHTML = cats.map(c => 
-                    `<button onclick="setFilter('${c}')" class="filter-btn ${currentFilter === c ? 'active' : ''}">${c}</button>`
-                ).join('');
-            }
-            
-            let carrosFiltrados = todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter);
-            if (termoBusca) {
-                carrosFiltrados = filtrarCarrosPorBusca(carrosFiltrados, termoBusca);
-            }
-            
-            const selectOrdenar = document.getElementById('ordenarGaragem');
-            const criterio = selectOrdenar ? selectOrdenar.value : 'modelo';
-            carrosFiltrados = ordenarCarros(carrosFiltrados, criterio);
-            
-            if (totalSpan) {
-                totalSpan.innerText = todosCarros.reduce((acc, c) => acc + (c.qty || 1), 0);
-            }
-            
-            if (resultadoBusca) {
-                const total = carrosFiltrados.length;
-                const totalGeral = todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter).length;
-                if (termoBusca) {
-                    resultadoBusca.innerHTML = `🔍 <span class="highlight">${total}</span> de ${totalGeral} modelo(s) encontrado(s)`;
-                } else {
-                    resultadoBusca.innerHTML = `📦 ${totalGeral} modelo(s)`;
-                }
-            }
-            
-            const btnLimpar = document.getElementById('btnLimparBusca');
-            if (btnLimpar) {
-                if (termoBusca.length > 0) {
-                    btnLimpar.classList.add('visible');
-                } else {
-                    btnLimpar.classList.remove('visible');
-                }
-            }
-            
-            if (hwListContainer) {
-                if (carrosFiltrados.length === 0 && todosCarros.length === 0) {
-                    hwListContainer.innerHTML = `<div class="hw-card p-8 text-center"><p class="text-zinc-500 text-[10px] uppercase font-black">🚗 Sua garagem está vazia!<br>Clique em NOVO para adicionar seu primeiro Hot Wheels</p></div>`;
-                } else if (carrosFiltrados.length === 0) {
-                    hwListContainer.innerHTML = `<div class="hw-card p-8 text-center"><p class="text-zinc-500 text-[10px] uppercase font-black">🔍 Nenhum carro encontrado para "${termoBusca}"</p></div>`;
-                } else {
-                    hwListContainer.innerHTML = carrosFiltrados.map((car, i) => `
-                        <div class="hw-card p-4 flex gap-4 items-center">
-                            <img src="${car.photo}" onclick="openLightbox(${i}, 'garage')" class="w-20 h-20 rounded-2xl object-cover shadow-lg cursor-pointer">
-                            <div class="flex-1 min-w-0">
-                                <div class="flex justify-between items-start">
-                                    <h4 class="font-black uppercase text-xs truncate text-white">${car.model || 'Sem modelo'}</h4>
-                                    <button onclick="removeHW('${car.id}')" class="delete-btn" title="Remover carro">✕</button>
-                                </div>
-                                <p class="text-yellow-400 text-[8px] font-black uppercase mt-1">${car.category || 'Sem categoria'}</p>
-                                <div class="flex items-center justify-between mt-3">
-                                    <span class="font-racing text-white text-sm"><span class="text-zinc-500 text-[8px]">QTD:</span> ${car.qty || 1}</span>
-                                    <button onclick="editCar('${car.id}', '${(car.model || '').replace(/'/g, "\\'")}', '${(car.series || '').replace(/'/g, "\\'")}', '${car.category || ''}', ${car.qty || 1})" class="edit-btn" title="Editar carro">✏️</button>
-                                </div>
-                            </div>
-                        </div>`).join('');
-                }
-            }
-            
-            if (currentView === 'ALBUM') renderAlbum();
-            if (document.getElementById('lightbox').style.display === 'flex' && currentLightboxType === 'garage') {
-                const idx = currentListForLightbox.findIndex(c => c.id === carrosFiltrados[lightboxIndex]?.id);
-                if (idx !== -1) lightboxIndex = idx;
-                updateLightbox();
-            }
-        }
-
         window.limparBusca = function() {
             const input = document.getElementById('searchGaragem');
             if (input) {
@@ -2756,17 +2811,259 @@
         window.ordenarGaragem = function() {
             renderGaragemPaginada();
         };
-        
-        async function recarregarGaragemCompleta() {
-            ultimoDoc = null;
-            temMaisCarros = true;
-            todosCarros = [];
+
+        window.setFilter = function(c) { 
+            currentFilter = c; 
             albumPaginaAtual = 0;
-            await carregarGaragemPaginada(true);
+            renderGaragemPaginada(); 
+            vibrate();
+        };
+
+        window.switchTab = function(t) { 
+            if (!checkUnsavedCar() && t !== 'novo') return;
+            ['novo','garagem','negociaveis'].forEach(x => { 
+                const section = document.getElementById('section'+x.charAt(0).toUpperCase()+x.slice(1)); 
+                const tab = document.getElementById('tab'+x.charAt(0).toUpperCase()+x.slice(1)); 
+                if (section) section.classList.add('hidden'); 
+                if (tab) tab.classList.remove('active'); 
+            }); 
+            const newSection = document.getElementById('section'+t.charAt(0).toUpperCase()+t.slice(1)); 
+            const newTab = document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)); 
+            if (newSection) newSection.classList.remove('hidden'); 
+            if (newTab) newTab.classList.add('active');
+            if(t === 'negociaveis') switchSubTab('buscar');
+            if(t === 'garagem') { 
+                currentFilter = 'TODOS'; 
+                albumPaginaAtual = 0;
+                recarregarGaragemCompleta();
+                if (unsubscribeGarage) {
+                    unsubscribeGarage();
+                    const user = auth.currentUser;
+                    if (user) {
+                        const q = query(collection(db, "garagens", user.uid, "miniaturas"), orderBy("createdAt", "desc"));
+                        unsubscribeGarage = onSnapshot(q, async (snap) => { 
+                            const novosCarros = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            const novosMap = new Map(novosCarros.map(c => [c.id, c]));
+                            for (let i = 0; i < todosCarros.length; i++) {
+                                const novo = novosMap.get(todosCarros[i].id);
+                                if (novo) { todosCarros[i] = { ...todosCarros[i], ...novo }; }
+                            }
+                            novosCarros.forEach(c => { if (!todosCarros.find(ex => ex.id === c.id)) { todosCarros.push(c); } });
+                            todosCarros = todosCarros.filter(c => novosMap.has(c.id));
+                            renderGaragemPaginada();
+                            if (document.getElementById('contentMeus').style.display !== 'none') { renderNegociosPaginados(); }
+                        });
+                    }
+                }
+            }
+            vibrate();
+        };
+
+        // ====== FUNÇÃO DE SUGESTÃO ======
+        async function fetchSuggestions(val, boxId, isGlobal = false) {
+            const sugBox = document.getElementById(boxId);
+            const searchVal = val.trim().toUpperCase();
+            
+            if (searchVal.length < 2) {
+                sugBox.style.display = 'none';
+                sugBox.innerHTML = '';
+                return;
+            }
+            
+            try {
+                const resultadosLocais = todosCarros.filter(car => {
+                    const modelo = (car.model || '').toUpperCase();
+                    return modelo.includes(searchVal);
+                });
+                
+                if (resultadosLocais.length > 0 && !isGlobal) {
+                    let html = resultadosLocais.slice(0, 5).map(item => {
+                        const userHasIt = todosCarros.some(car => car.model === item.model);
+                        const hasItBadge = userHasIt ? '<span class="ml-2 text-emerald-400 text-[8px]">✅ JÁ TEM</span>' : '';
+                        return `<div class="flex items-center gap-4 p-4 border-b border-zinc-900/50 cursor-pointer hover:bg-zinc-800/50 transition-all" onclick="selectNew('${item.model.replace(/'/g, "\\'")}', '${item.photo || ''}', '${(item.series || '').replace(/'/g, "\\'")}', '${item.category || 'MAINLINE'}')"><img src="${item.photo || ''}" class="w-12 h-12 rounded-xl object-cover shadow-md"><div class="text-[10px] font-black uppercase flex-1"><p class="text-white">${item.model}${hasItBadge}</p><p class="text-yellow-500 mt-0.5">${item.series || 'Série?'}</p></div></div>`;
+                    }).join('');
+                    
+                    sugBox.innerHTML = html;
+                    sugBox.style.display = 'block';
+                    return;
+                }
+                
+                if (!isGlobal && resultadosLocais.length > 0) {
+                    return;
+                }
+                
+                const q = query(collectionGroup(db, "miniaturas"), limit(20));
+                const snap = await getDocs(q);
+                
+                let results = snap.docs.map(d => ({ 
+                    ...d.data(), 
+                    ownerId: d.ref.parent.parent.id, 
+                    docId: d.id 
+                }));
+                
+                results = results.filter(data => {
+                    const modelo = (data.model || '').toUpperCase();
+                    return modelo.includes(searchVal);
+                });
+                
+                if (isGlobal) {
+                    results = results.filter(data => data.negotiable === true);
+                }
+                
+                const modeloCount = {};
+                results.forEach(item => {
+                    const key = item.model.toUpperCase();
+                    if (!modeloCount[key]) {
+                        modeloCount[key] = { item, count: 0 };
+                    }
+                    modeloCount[key].count++;
+                });
+                
+                const modelosUnicos = Object.values(modeloCount)
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 8)
+                    .map(entry => entry.item);
+                
+                if (modelosUnicos.length > 0) {
+                    const html = modelosUnicos.map(item => {
+                        const userHasIt = todosCarros.some(car => car.model === item.model);
+                        const hasItBadge = userHasIt ? '<span class="ml-2 text-emerald-400 text-[8px]">✅ JÁ TEM</span>' : '';
+                        const onclickAttr = isGlobal ? 
+                            `selectGlobal('${item.model.replace(/'/g, "\\'")}', '${item.photo || ''}', '${(item.series || '').replace(/'/g, "\\'")}', '${item.category || 'MAINLINE'}', '${item.ownerId}')` :
+                            `selectNew('${item.model.replace(/'/g, "\\'")}', '${item.photo || ''}', '${(item.series || '').replace(/'/g, "\\'")}', '${item.category || 'MAINLINE'}')`;
+                        
+                        return `<div class="flex items-center gap-4 p-4 border-b border-zinc-900/50 cursor-pointer hover:bg-zinc-800/50 transition-all" onclick="${onclickAttr}"><img src="${item.photo || ''}" class="w-12 h-12 rounded-xl object-cover shadow-md"><div class="text-[10px] font-black uppercase flex-1"><p class="text-white">${item.model}${hasItBadge}</p><p class="text-yellow-500 mt-0.5">${item.series || 'Série?'}</p></div></div>`;
+                    }).join('');
+                    
+                    sugBox.innerHTML = html;
+                    sugBox.style.display = 'block';
+                } else {
+                    if (!isGlobal) {
+                        sugBox.innerHTML = `<div class="p-4 text-center text-zinc-500 text-[10px]">Nenhum modelo encontrado</div>`;
+                        sugBox.style.display = 'block';
+                    } else {
+                        sugBox.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao buscar sugestões:', error);
+                sugBox.style.display = 'none';
+            }
         }
 
-        window.carregarMaisCarros = function() { carregarGaragemPaginada(false); };
+        // ====== FUNÇÃO SELECT NEW ======
+        window.selectNew = function(m, p, s, c) { 
+            document.getElementById('hwModel').value = m; 
+            document.getElementById('hwSeries').value = s || ''; 
+            document.getElementById('hwCategory').value = c || 'MAINLINE'; 
+            document.getElementById('selectedCategoryText').innerHTML = c || 'MAINLINE';
+            document.getElementById('newModelSuggestions').style.display = 'none'; 
+            if(p && p !== '') { 
+                currentPhoto = p; 
+                document.getElementById('imgPreview').src = p; 
+                document.getElementById('previewContainer').classList.remove('hidden'); 
+                showToast("Modelo sugerido carregado!", "✨");
+            } 
+            pendingCar = { model: m };
+        };
 
+        window.selectGlobal = function(m, p, s, c, ownerId) { 
+            document.getElementById('globalSearchInput').value = m; 
+            document.getElementById('globalSearchSuggestions').style.display = 'none'; 
+            globalResults = [{ model: m, photo: p, series: s, category: c, ownerId: ownerId }]; 
+            renderGlobalResults(); 
+            renderShopeeAds(m);
+        };
+
+        window.saveContactProfile = async function() { 
+            const displayName = document.getElementById('userDisplayName').value.trim().toUpperCase();
+            const displayNameFinal = displayName || "COLECIONADOR";
+            const perfilRef = doc(db, "perfis", auth.currentUser.uid);
+            const perfilDoc = await getDoc(perfilRef);
+            if (perfilDoc.exists()) {
+                await updateDoc(perfilRef, { whatsapp: document.getElementById('userWhatsapp').value, email: document.getElementById('userEmailContact').value, displayName: displayNameFinal });
+            } else {
+                await setDoc(perfilRef, { whatsapp: document.getElementById('userWhatsapp').value, email: document.getElementById('userEmailContact').value, displayName: displayNameFinal });
+            }
+            currentUserDisplayName = displayNameFinal;
+            atualizarNomeCabecalho();
+            limparCache();
+            showToast("Perfil atualizado!", "👤"); 
+            vibrate();
+        };
+        
+        async function loadContactProfile() { 
+            const d = await getDoc(doc(db, "perfis", auth.currentUser.uid)); 
+            if(d.exists()) { 
+                document.getElementById('userWhatsapp').value = d.data().whatsapp || ""; 
+                document.getElementById('userEmailContact').value = d.data().email || "";
+                currentUserDisplayName = d.data().displayName || "COLECIONADOR";
+                document.getElementById('userDisplayName').value = currentUserDisplayName === "COLECIONADOR" ? "" : currentUserDisplayName;
+                atualizarNomeCabecalho();
+                if (!d.data().displayName || d.data().displayName === "COLECIONADOR") {
+                    setTimeout(() => { abrirModalNome(); }, 1000);
+                } else { mostrarBoasVindas(); }
+            } else {
+                currentUserDisplayName = "COLECIONADOR";
+                atualizarNomeCabecalho();
+                setTimeout(() => { abrirModalNome(); }, 1000);
+            }
+        }
+
+        window.showToast = function(msg, icon = '✨') {
+            const toast = document.getElementById('hwToast');
+            if (toast) {
+                document.getElementById('toastMsg').innerText = msg;
+                document.getElementById('toastIcon').innerText = icon;
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3000);
+            }
+        };
+
+        const vibrate = () => { if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); };
+
+        window.customConfirm = function(title, msg, callback, cancelCallback) {
+            const modal = document.getElementById('confirmModal');
+            document.getElementById('confirmTitle').innerText = title;
+            document.getElementById('confirmText').innerText = msg;
+            modal.style.display = 'flex';
+            document.getElementById('confirmOk').onclick = () => { 
+                modal.style.display = 'none'; 
+                if (callback) callback();
+                vibrate();
+            };
+            document.getElementById('confirmCancel').onclick = () => { 
+                modal.style.display = 'none'; 
+                if (cancelCallback) cancelCallback();
+                vibrate();
+            };
+        };
+
+        window.switchSubTab = function(s) { 
+            ['buscar','meus','perfil'].forEach(x => { const content = document.getElementById('content'+x.charAt(0).toUpperCase()+x.slice(1)); const subTab = document.getElementById('subTab'+x.charAt(0).toUpperCase()+x.slice(1)); if (content) content.classList.add('hidden'); if (subTab) subTab.classList.remove('active'); }); 
+            const newContent = document.getElementById('content'+s.charAt(0).toUpperCase()+s.slice(1)); const newSubTab = document.getElementById('subTab'+s.charAt(0).toUpperCase()+s.slice(1)); if (newContent) newContent.classList.remove('hidden'); if (newSubTab) newSubTab.classList.add('active');
+            if (s === 'meus') {
+                renderNegociosPaginados();
+            }
+        };
+
+        function renderNegociosPaginados() {
+            const negotiablesContainer = document.getElementById('hwListMyNegotiables');
+            if (negotiablesContainer) {
+                negotiablesContainer.innerHTML = todosCarros.map((car, i) => `
+                    <div class="hw-card p-4 flex gap-4 items-center ${car.negotiable ? 'border-emerald-500/50' : ''}">
+                        <img src="${car.photo}" onclick="openLightbox(${i}, 'meus')" class="w-14 h-14 rounded-xl object-cover cursor-pointer">
+                        <div class="flex-1">
+                            <h5 class="text-[10px] font-black uppercase text-white truncate">${car.model}</h5>
+                            <button onclick="toggleNegotiable('${car.id}', ${car.negotiable})" class="mt-2 px-4 py-2 rounded-xl text-[8px] font-black uppercase transition-all ${car.negotiable ? 'bg-red-950 text-red-400' : 'bg-emerald-950 text-emerald-400'} active:scale-95">
+                                ${car.negotiable ? 'Remover Oferta' : 'Ofertar Troca'}
+                            </button>
+                        </div>
+                    </div>`).join('');
+            }
+        }
+
+        // ====== FUNÇÃO UPDATE EDITED CAR CORRIGIDA ======
         window.updateEditedCar = async function() {
             const newModel = document.getElementById('editModel').value.trim().toUpperCase();
             const newSeries = document.getElementById('editSeries').value.trim().toUpperCase();
@@ -2784,7 +3081,15 @@
             btn.innerHTML = '<span class="loading-spinner"></span> Salvando...';
             
             try {
-                await updateDoc(doc(db, "garagens", auth.currentUser.uid, "miniaturas", editingCarId), { 
+                const user = auth.currentUser;
+                if (!user) {
+                    showToast("Faça login novamente", "⚠️");
+                    btn.disabled = false;
+                    btn.innerHTML = textoOriginal;
+                    return;
+                }
+                
+                await updateDoc(doc(db, "garagens", user.uid, "miniaturas", editingCarId), { 
                     model: newModel, 
                     series: newSeries, 
                     category: newCategory, 
@@ -2822,6 +3127,165 @@
             document.getElementById('editModal').style.display = 'none'; 
             editingCarId = null; 
         };
+
+        // ============================================
+        // ====== EVENTOS E INICIALIZAÇÃO ============
+        // ============================================
+
+        document.getElementById('viewListBtn').addEventListener('click', () => alternarVisualizacao('LISTA'));
+        document.getElementById('viewAlbumBtn').addEventListener('click', () => alternarVisualizacao('ALBUM'));
+        document.getElementById('albumPrevBtn').addEventListener('click', () => {
+            if (albumPaginaAtual > 0) { albumPaginaAtual--; renderAlbum(); }
+        });
+        document.getElementById('albumNextBtn').addEventListener('click', () => {
+            if (albumPaginaAtual < totalPaginasAlbum - 1) { albumPaginaAtual++; renderAlbum(); }
+        });
+
+        // ====== EVENTO DO BOTÃO SALVAR EDIÇÃO ======
+        const salvarEditBtn = document.getElementById('salvarEditBtn');
+        if (salvarEditBtn) {
+            salvarEditBtn.addEventListener('click', window.updateEditedCar);
+        }
+
+        window.checkUnsavedCar = function() {
+            const model = document.getElementById('hwModel').value.trim();
+            if ((model || currentPhoto) && !pendingCar) {
+                document.getElementById('unsavedAlert').style.display = 'block';
+                setTimeout(() => document.getElementById('unsavedAlert').style.display = 'none', 3000);
+                return false;
+            }
+            return true;
+        };
+
+        window.clearAllInputs = function() {
+            const inputs = document.querySelectorAll('#mainContent input:not([type="button"]):not([type="submit"]), #mainContent select');
+            inputs.forEach(input => { if (input.type === 'number') input.value = "1"; else if (input.id !== 'hwCategory' && input.id !== 'globalSearchInput') input.value = ""; });
+            if (document.getElementById('globalSearchInput')) document.getElementById('globalSearchInput').value = '';
+            currentPhoto = ""; 
+            globalResults = [];
+            pendingCar = null;
+            if (document.getElementById('hwListGlobal')) document.getElementById('hwListGlobal').innerHTML = "";
+            if (document.getElementById('shopeeAdsContainer')) document.getElementById('shopeeAdsContainer').innerHTML = "";
+            if (document.getElementById('newModelSuggestions')) document.getElementById('newModelSuggestions').style.display = 'none';
+            if (document.getElementById('globalSearchSuggestions')) document.getElementById('globalSearchSuggestions').style.display = 'none';
+            if (document.getElementById('previewContainer')) document.getElementById('previewContainer').classList.add('hidden');
+            currentGlobalFilter = 'TODOS';
+            document.getElementById('hwCategory').value = 'MAINLINE';
+            document.getElementById('selectedCategoryText').innerHTML = 'MAINLINE';
+            limparCache();
+        };
+
+        window.clearPreview = function() { 
+            currentPhoto = ""; 
+            document.getElementById('previewContainer').classList.add('hidden'); 
+            document.getElementById('imgPreview').src = ""; 
+            document.getElementById('tamanhoPreview').innerHTML = "";
+            showToast("Foto removida", "🗑️");
+        };
+
+        window.debouncedGlobalSearch = function() {
+            if (searchTimeout) clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => forceGlobalSearch(), 500);
+        };
+
+        window.forceGlobalSearch = async function() {
+            const input = document.getElementById('globalSearchInput');
+            const val = input.value.trim().toUpperCase(); 
+            renderShopeeAds(val);
+            if (val.length < 3) { if (val.length > 0) showToast("Digite pelo menos 3 letras", "🔍"); return; }
+            const btn = document.getElementById('searchBtn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span>'; }
+            try {
+                const q = query(collectionGroup(db, "miniaturas"), where("negotiable", "==", true), limit(50));
+                const snap = await getDocs(q);
+                let results = snap.docs.map(d => ({ ...d.data(), ownerId: d.ref.parent.parent.id, docId: d.id }));
+                results = results.filter(data => data.model?.toUpperCase().includes(val));
+                if (currentGlobalFilter !== 'TODOS') results = results.filter(data => data.category === currentGlobalFilter);
+                globalResults = results;
+                renderGlobalResults();
+            } catch (error) { showToast("Erro na busca", "❌"); }
+            finally { if (btn) { btn.disabled = false; btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'; } }
+        };
+
+        window.renderGlobalResults = function() {
+            const listContainer = document.getElementById('hwListGlobal');
+            const searchTerm = document.getElementById('globalSearchInput').value.toUpperCase();
+            let html = globalResults.map((car, i) => `<div class="hw-card p-4 flex gap-4 items-center"><img src="${car.photo}" onclick="openLightbox(${i}, 'global')" class="w-16 h-16 rounded-xl object-cover cursor-pointer"><div class="flex-1"><h4 class="font-black uppercase text-xs truncate text-white">${car.model}</h4><p class="text-yellow-400 text-[8px] font-black uppercase mt-1">${car.category}</p><button onclick="interessar(${i})" class="mt-2 bg-emerald-600 text-white font-black text-[9px] px-4 py-2 rounded-lg uppercase active:scale-95 transition-all">Ver Contato</button></div></div>`).join('');
+            if (globalResults.length === 0 && searchTerm.length >= 3) html = `<div class="p-8 text-center bg-zinc-900/30 rounded-3xl border border-zinc-800"><h3 class="text-zinc-500 font-racing uppercase italic mb-4">Nenhum resultado na comunidade</h3><p class="text-[10px] text-zinc-600">Que tal buscar na Shopee?</p></div>`;
+            if (listContainer) listContainer.innerHTML = html;
+        };
+
+        window.renderShopeeAds = function(searchTerm) {
+            const container = document.getElementById('shopeeAdsContainer');
+            if (!container) return;
+            if (!searchTerm || searchTerm.length < 3) { 
+                container.innerHTML = ''; 
+                return; 
+            }
+            const links = generateShopeeLinks(searchTerm);
+            let adsHtml = `<div class="shopee-card rounded-2xl p-4 mt-4"><div class="flex items-center gap-2 mb-3"><span class="text-[#ee4d2d] text-xl">🛒</span><h4 class="text-[10px] font-black uppercase text-[#ee4d2d] tracking-widest">COMPRE NA SHOPEE - APOIE O PROJETO</h4></div><div class="space-y-2">`;
+            links.forEach(link => {
+                adsHtml += `<a href="${link.url}" target="${link.target}" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-orange-500/10 rounded-xl border border-orange-500/20 hover:border-orange-500/50 transition-all group"><div class="flex items-center gap-3"><span class="text-xl">${link.icon}</span><span class="text-[11px] font-black uppercase text-white group-hover:text-[#ee4d2d] transition-colors">${link.name}</span></div><span class="text-[#ee4d2d] text-sm">→</span></a>`;
+            });
+            adsHtml += `</div><div class="mt-3 pt-2 border-t border-orange-500/20"><p class="text-[8px] text-zinc-500 uppercase text-center">🔗 Links de afiliado - Você ajuda o app a continuar grátis!</p></div></div>`;
+            container.innerHTML = adsHtml;
+        };
+
+        window.generateShopeeLinks = function(searchTerm) {
+            if (!searchTerm || searchTerm.length < 2) return [];
+            const cleanTerm = encodeURIComponent(searchTerm.trim());
+            const baseUrl = `https://shopee.com.br/search?keyword=hot%20wheels%20${cleanTerm}`;
+            return [
+                { name: "🔍 Hot Wheels " + searchTerm, url: `${baseUrl}&smatt=1&utm_source=an_17710940000&utm_medium=affiliates&utm_campaign=18324700679_${MEU_ID_AFILIADO}`, icon: "🛒", target: "_blank" },
+                { name: "⭐ Modelos Raros - Hot Wheels", url: `https://shopee.com.br/search?keyword=hot%20wheels%20${cleanTerm}%20rare&smatt=1&utm_source=an_17710940000&utm_medium=affiliates&utm_campaign=18324700679_${MEU_ID_AFILIADO}`, icon: "⭐", target: "_blank" },
+                { name: "📦 Kit + Carrinhos Hot Wheels", url: `https://shopee.com.br/search?keyword=hot%20wheels%20${cleanTerm}%20kit&smatt=1&utm_source=an_17710940000&utm_medium=affiliates&utm_campaign=18324700679_${MEU_ID_AFILIADO}`, icon: "📦", target: "_blank" }
+            ];
+        };
+
+        window.interessar = async function(index) {
+            const car = globalResults[index];
+            const prof = await getDoc(doc(db, "perfis", car.ownerId));
+            const box = document.getElementById('contactOptions'); 
+            box.innerHTML = "";
+            if(prof.exists()) {
+                const d = prof.data();
+                if(d.whatsapp) box.innerHTML += `<div class="space-y-1"><p class="text-[9px] text-zinc-500 uppercase font-black">WhatsApp</p><div class="flex gap-2"><input type="text" readonly value="${d.whatsapp}" class="bg-zinc-950 p-3 rounded-xl flex-1 text-xs font-bold text-white border border-zinc-800"><button onclick="copyAndClose('${d.whatsapp}')" class="bg-emerald-500 text-black font-black px-4 rounded-xl text-[9px] uppercase active:scale-95 transition-all">Copiar</button></div></div>`;
+                if(d.email) box.innerHTML += `<div class="space-y-1 mt-4"><p class="text-[9px] text-zinc-500 uppercase font-black">E-mail</p><div class="flex gap-2"><input type="text" readonly value="${d.email}" class="bg-zinc-950 p-3 rounded-xl flex-1 text-xs font-bold text-white border border-zinc-800"><button onclick="copyAndClose('${d.email}')" class="bg-emerald-500 text-black font-black px-4 rounded-xl text-[9px] uppercase active:scale-95 transition-all">Copiar</button></div></div>`;
+                if(d.displayName) {
+                    box.innerHTML += `<div class="space-y-1 mt-4"><p class="text-[9px] text-zinc-500 uppercase font-black">Colecionador</p><div class="display-name-box"><p class="display-name-text font-bold uppercase text-center">${d.displayName}</p></div></div>`;
+                }
+            }
+            document.getElementById('contactModal').style.display = 'flex';
+            vibrate();
+        };
+
+        window.copyAndClose = function(txt) { 
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(txt).then(() => { 
+                    showToast("Copiado!", "✅"); 
+                    vibrate();
+                    document.getElementById('contactModal').style.display = 'none'; 
+                }).catch(() => {
+                    copiarFallback(txt);
+                });
+            } else {
+                copiarFallback(txt);
+            }
+        };
+        
+        function copiarFallback(txt) {
+            const textarea = document.createElement('textarea');
+            textarea.value = txt;
+            textarea.style.position = 'fixed';
+            textarea.style.top = '-1000px';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast("Copiado!", "✅");
+            vibrate();
+            document.getElementById('contactModal').style.display = 'none';
+        }
 
         window.excluirConta = async function() {
             const user = auth.currentUser;
@@ -2973,42 +3437,15 @@
             }
         }
 
-        window.showToast = function(msg, icon = '✨') {
-            const toast = document.getElementById('hwToast');
-            if (toast) {
-                document.getElementById('toastMsg').innerText = msg;
-                document.getElementById('toastIcon').innerText = icon;
-                toast.classList.add('show');
-                setTimeout(() => toast.classList.remove('show'), 3000);
-            }
-        };
+        const seriesInput = document.getElementById('hwSeries');
+        if (seriesInput) {
+            seriesInput.addEventListener('focus', () => showSeriesSuggestions());
+            seriesInput.addEventListener('input', () => showSeriesSuggestions());
+        }
 
-        const vibrate = () => { if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); };
+        setupPasteListener();
 
-        window.customConfirm = function(title, msg, callback, cancelCallback) {
-            const modal = document.getElementById('confirmModal');
-            document.getElementById('confirmTitle').innerText = title;
-            document.getElementById('confirmText').innerText = msg;
-            modal.style.display = 'flex';
-            document.getElementById('confirmOk').onclick = () => { 
-                modal.style.display = 'none'; 
-                if (callback) callback();
-                vibrate();
-            };
-            document.getElementById('confirmCancel').onclick = () => { 
-                modal.style.display = 'none'; 
-                if (cancelCallback) cancelCallback();
-                vibrate();
-            };
-        };
-
-        window.handleForgotPassword = async function() {
-            const email = document.getElementById('authEmail').value;
-            if (!email) { showToast("Digite seu e-mail.", "⚠️"); return; }
-            try { await sendPasswordResetEmail(auth, email); showToast("E-mail enviado! Verifique sua caixa de entrada.", "📧"); } 
-            catch (error) { showToast("E-mail não encontrado ou erro no envio.", "❌"); }
-        };
-        
+        // ====== AUTENTICAÇÃO ======
         const handleLogin = async () => {
             const btn = document.getElementById('loginBtn');
             const email = document.getElementById('authEmail').value;
@@ -3064,527 +3501,19 @@
             showToast("Sessão encerrada. Até logo!", "👋"); 
             vibrate();
         };
-        
+
         document.getElementById('loginBtn').addEventListener('click', handleLogin);
         document.getElementById('signupBtn').addEventListener('click', handleSignup);
-        document.getElementById('forgotBtn').addEventListener('click', () => handleForgotPassword());
+        document.getElementById('forgotBtn').addEventListener('click', async () => {
+            const email = document.getElementById('authEmail').value;
+            if (!email) { showToast("Digite seu e-mail.", "⚠️"); return; }
+            try { await sendPasswordResetEmail(auth, email); showToast("E-mail enviado! Verifique sua caixa de entrada.", "📧"); } 
+            catch (error) { showToast("E-mail não encontrado ou erro no envio.", "❌"); }
+        });
         document.getElementById('logoutBtn').addEventListener('click', handleLogout);
-        
-        const excluirBtn = document.getElementById('excluirContaBtn');
-        if (excluirBtn) excluirBtn.addEventListener('click', () => window.excluirConta());
 
-        const temaBtn = document.getElementById('temaBtn');
-        if (temaBtn) temaBtn.addEventListener('click', alternarTema);
-        carregarTema();
-
-        document.getElementById('viewListBtn').addEventListener('click', () => alternarVisualizacao('LISTA'));
-        document.getElementById('viewAlbumBtn').addEventListener('click', () => alternarVisualizacao('ALBUM'));
-        document.getElementById('albumPrevBtn').addEventListener('click', () => albumPaginaAnterior());
-        document.getElementById('albumNextBtn').addEventListener('click', () => albumProximaPagina());
-
-        const salvarEditBtn = document.getElementById('salvarEditBtn');
-        if (salvarEditBtn) { salvarEditBtn.addEventListener('click', window.updateEditedCar); }
-        
-        const confirmPasteBtn = document.getElementById('confirmPasteBtn');
-        const cancelPasteBtn = document.getElementById('cancelPasteBtn');
-        if (confirmPasteBtn) confirmPasteBtn.addEventListener('click', window.confirmarPasteImage);
-        if (cancelPasteBtn) cancelPasteBtn.addEventListener('click', fecharModalColarImagem);
-
-        document.addEventListener('click', (e) => {
-            const seriesInput = document.getElementById('hwSeries');
-            const seriesBox = document.getElementById('seriesSuggestions');
-            const categoryButton = document.getElementById('categoryButton');
-            const categoryDropdown = document.getElementById('categoryDropdown');
-            if (seriesInput && seriesBox && !seriesInput.contains(e.target) && !seriesBox.contains(e.target)) seriesBox.style.display = 'none';
-            if (categoryButton && categoryDropdown && !categoryButton.contains(e.target) && !categoryDropdown.contains(e.target)) categoryDropdown.style.display = 'none';
-            const suggestionItem = e.target.closest('.series-suggestion');
-            if (suggestionItem) { const value = suggestionItem.getAttribute('data-value'); if (value) selectSeries(value); }
-        });
-
-        window.checkUnsavedCar = function() {
-            const model = document.getElementById('hwModel').value.trim();
-            if ((model || currentPhoto) && !pendingCar) {
-                document.getElementById('unsavedAlert').style.display = 'block';
-                setTimeout(() => document.getElementById('unsavedAlert').style.display = 'none', 3000);
-                return false;
-            }
-            return true;
-        };
-
-        window.clearAllInputs = function() {
-            const inputs = document.querySelectorAll('#mainContent input:not([type="button"]):not([type="submit"]), #mainContent select');
-            inputs.forEach(input => { if (input.type === 'number') input.value = "1"; else if (input.id !== 'hwCategory' && input.id !== 'globalSearchInput') input.value = ""; });
-            if (document.getElementById('globalSearchInput')) document.getElementById('globalSearchInput').value = '';
-            currentPhoto = ""; 
-            globalResults = [];
-            pendingCar = null;
-            if (document.getElementById('hwListGlobal')) document.getElementById('hwListGlobal').innerHTML = "";
-            if (document.getElementById('shopeeAdsContainer')) document.getElementById('shopeeAdsContainer').innerHTML = "";
-            if (document.getElementById('newModelSuggestions')) document.getElementById('newModelSuggestions').style.display = 'none';
-            if (document.getElementById('globalSearchSuggestions')) document.getElementById('globalSearchSuggestions').style.display = 'none';
-            if (document.getElementById('previewContainer')) document.getElementById('previewContainer').classList.add('hidden');
-            currentGlobalFilter = 'TODOS';
-            document.getElementById('hwCategory').value = 'MAINLINE';
-            document.getElementById('selectedCategoryText').innerHTML = 'MAINLINE';
-            limparCache();
-        };
-
-        window.clearPreview = function() { 
-            currentPhoto = ""; 
-            document.getElementById('previewContainer').classList.add('hidden'); 
-            document.getElementById('imgPreview').src = ""; 
-            document.getElementById('tamanhoPreview').innerHTML = "";
-            showToast("Foto removida", "🗑️");
-        };
-
-        window.debouncedGlobalSearch = function() {
-            if (searchTimeout) clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => forceGlobalSearch(), 500);
-        };
-
-        window.generateShopeeLinks = function(searchTerm) {
-            if (!searchTerm || searchTerm.length < 2) return [];
-            const cleanTerm = encodeURIComponent(searchTerm.trim());
-            const baseUrl = `https://shopee.com.br/search?keyword=hot%20wheels%20${cleanTerm}`;
-            return [
-                { name: "🔍 Hot Wheels " + searchTerm, url: `${baseUrl}&smatt=1&utm_source=an_17710940000&utm_medium=affiliates&utm_campaign=18324700679_${MEU_ID_AFILIADO}`, icon: "🛒", target: "_blank" },
-                { name: "⭐ Modelos Raros - Hot Wheels", url: `https://shopee.com.br/search?keyword=hot%20wheels%20${cleanTerm}%20rare&smatt=1&utm_source=an_17710940000&utm_medium=affiliates&utm_campaign=18324700679_${MEU_ID_AFILIADO}`, icon: "⭐", target: "_blank" },
-                { name: "📦 Kit + Carrinhos Hot Wheels", url: `https://shopee.com.br/search?keyword=hot%20wheels%20${cleanTerm}%20kit&smatt=1&utm_source=an_17710940000&utm_medium=affiliates&utm_campaign=18324700679_${MEU_ID_AFILIADO}`, icon: "📦", target: "_blank" }
-            ];
-        };
-
-        window.renderShopeeAds = function(searchTerm) {
-            const container = document.getElementById('shopeeAdsContainer');
-            if (!container) return;
-            if (!searchTerm || searchTerm.length < 3) { 
-                container.innerHTML = ''; 
-                return; 
-            }
-            const links = generateShopeeLinks(searchTerm);
-            let adsHtml = `<div class="shopee-card rounded-2xl p-4 mt-4"><div class="flex items-center gap-2 mb-3"><span class="text-[#ee4d2d] text-xl">🛒</span><h4 class="text-[10px] font-black uppercase text-[#ee4d2d] tracking-widest">COMPRE NA SHOPEE - APOIE O PROJETO</h4></div><div class="space-y-2">`;
-            links.forEach(link => {
-                adsHtml += `<a href="${link.url}" target="${link.target}" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-orange-500/10 rounded-xl border border-orange-500/20 hover:border-orange-500/50 transition-all group"><div class="flex items-center gap-3"><span class="text-xl">${link.icon}</span><span class="text-[11px] font-black uppercase text-white group-hover:text-[#ee4d2d] transition-colors">${link.name}</span></div><span class="text-[#ee4d2d] text-sm">→</span></a>`;
-            });
-            adsHtml += `</div><div class="mt-3 pt-2 border-t border-orange-500/20"><p class="text-[8px] text-zinc-500 uppercase text-center">🔗 Links de afiliado - Você ajuda o app a continuar grátis!</p></div></div>`;
-            container.innerHTML = adsHtml;
-        };
-
-        window.forceGlobalSearch = async function() {
-            const input = document.getElementById('globalSearchInput');
-            const val = input.value.trim().toUpperCase(); 
-            renderShopeeAds(val);
-            if (val.length < 3) { if (val.length > 0) showToast("Digite pelo menos 3 letras", "🔍"); return; }
-            const btn = document.getElementById('searchBtn');
-            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span>'; }
-            try {
-                const q = query(collectionGroup(db, "miniaturas"), where("negotiable", "==", true), limit(50));
-                const snap = await getDocs(q);
-                let results = snap.docs.map(d => ({ ...d.data(), ownerId: d.ref.parent.parent.id, docId: d.id }));
-                results = results.filter(data => data.model?.toUpperCase().includes(val));
-                if (currentGlobalFilter !== 'TODOS') results = results.filter(data => data.category === currentGlobalFilter);
-                globalResults = results;
-                renderGlobalResults();
-            } catch (error) { showToast("Erro na busca", "❌"); }
-            finally { if (btn) { btn.disabled = false; btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'; } }
-        };
-
-        window.renderGlobalResults = function() {
-            const listContainer = document.getElementById('hwListGlobal');
-            const searchTerm = document.getElementById('globalSearchInput').value.toUpperCase();
-            let html = globalResults.map((car, i) => `<div class="hw-card p-4 flex gap-4 items-center"><img src="${car.photo}" onclick="openLightbox(${i}, 'global')" class="w-16 h-16 rounded-xl object-cover cursor-pointer"><div class="flex-1"><h4 class="font-black uppercase text-xs truncate text-white">${car.model}</h4><p class="text-yellow-400 text-[8px] font-black uppercase mt-1">${car.category}</p><button onclick="interessar(${i})" class="mt-2 bg-emerald-600 text-white font-black text-[9px] px-4 py-2 rounded-lg uppercase active:scale-95 transition-all">Ver Contato</button></div></div>`).join('');
-            if (globalResults.length === 0 && searchTerm.length >= 3) html = `<div class="p-8 text-center bg-zinc-900/30 rounded-3xl border border-zinc-800"><h3 class="text-zinc-500 font-racing uppercase italic mb-4">Nenhum resultado na comunidade</h3><p class="text-[10px] text-zinc-600">Que tal buscar na Shopee?</p></div>`;
-            if (listContainer) listContainer.innerHTML = html;
-        };
-
-        window.setGlobalFilter = function(c) {
-            currentGlobalFilter = c;
-            document.querySelectorAll('#globalCategoryFilters .filter-btn').forEach(btn => {
-                if (btn.innerText === c) btn.classList.add('active');
-                else btn.classList.remove('active');
-            });
-            if (document.getElementById('globalSearchInput').value.trim().length >= 3) forceGlobalSearch();
-        };
-
-        window.interessar = async function(index) {
-            const car = globalResults[index];
-            const prof = await getDoc(doc(db, "perfis", car.ownerId));
-            const box = document.getElementById('contactOptions'); 
-            box.innerHTML = "";
-            if(prof.exists()) {
-                const d = prof.data();
-                if(d.whatsapp) box.innerHTML += `<div class="space-y-1"><p class="text-[9px] text-zinc-500 uppercase font-black">WhatsApp</p><div class="flex gap-2"><input type="text" readonly value="${d.whatsapp}" class="bg-zinc-950 p-3 rounded-xl flex-1 text-xs font-bold text-white border border-zinc-800"><button onclick="copyAndClose('${d.whatsapp}')" class="bg-emerald-500 text-black font-black px-4 rounded-xl text-[9px] uppercase active:scale-95 transition-all">Copiar</button></div></div>`;
-                if(d.email) box.innerHTML += `<div class="space-y-1 mt-4"><p class="text-[9px] text-zinc-500 uppercase font-black">E-mail</p><div class="flex gap-2"><input type="text" readonly value="${d.email}" class="bg-zinc-950 p-3 rounded-xl flex-1 text-xs font-bold text-white border border-zinc-800"><button onclick="copyAndClose('${d.email}')" class="bg-emerald-500 text-black font-black px-4 rounded-xl text-[9px] uppercase active:scale-95 transition-all">Copiar</button></div></div>`;
-                if(d.displayName) {
-                    box.innerHTML += `<div class="space-y-1 mt-4"><p class="text-[9px] text-zinc-500 uppercase font-black">Colecionador</p><div class="display-name-box"><p class="display-name-text font-bold uppercase text-center">${d.displayName}</p></div></div>`;
-                }
-            }
-            document.getElementById('contactModal').style.display = 'flex';
-            vibrate();
-        };
-
-        window.copyAndClose = function(txt) { 
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(txt).then(() => { 
-                    showToast("Copiado!", "✅"); 
-                    vibrate();
-                    document.getElementById('contactModal').style.display = 'none'; 
-                }).catch(() => {
-                    copiarFallback(txt);
-                });
-            } else {
-                copiarFallback(txt);
-            }
-        };
-        
-        function copiarFallback(txt) {
-            const textarea = document.createElement('textarea');
-            textarea.value = txt;
-            textarea.style.position = 'fixed';
-            textarea.style.top = '-1000px';
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-            showToast("Copiado!", "✅");
-            vibrate();
-            document.getElementById('contactModal').style.display = 'none';
-        }
-        
-        window.openLightbox = function(index, listType) {
-            currentLightboxType = listType;
-            if (listType === 'garage') {
-                const filtered = todosCarros.filter(c => currentFilter === 'TODOS' || c.category === currentFilter);
-                currentListForLightbox = filtered;
-                if (index >= currentListForLightbox.length) {
-                    index = currentListForLightbox.length - 1;
-                }
-                if (index < 0) index = 0;
-                lightboxIndex = index;
-            } else if (listType === 'meus') {
-                currentListForLightbox = [...todosCarros];
-                if (index >= currentListForLightbox.length) {
-                    index = currentListForLightbox.length - 1;
-                }
-                if (index < 0) index = 0;
-                lightboxIndex = index;
-            } else {
-                currentListForLightbox = globalResults;
-                if (index >= currentListForLightbox.length) {
-                    index = currentListForLightbox.length - 1;
-                }
-                if (index < 0) index = 0;
-                lightboxIndex = index;
-            }
-            if (currentListForLightbox.length > 0) {
-                updateLightbox();
-                document.getElementById('lightbox').style.display = 'flex';
-            } else {
-                showToast("Nenhum carro encontrado", "⚠️");
-            }
-        };
-        
-        window.closeLightbox = function() { document.getElementById('lightbox').style.display = 'none'; };
-        
-        window.changeLightboxImg = function(dir) { 
-            if(currentListForLightbox.length === 0) return; 
-            lightboxIndex = (lightboxIndex + dir + currentListForLightbox.length) % currentListForLightbox.length; 
-            updateLightbox(); 
-        };
-
-        function updateLightbox() {
-            if (!currentListForLightbox || currentListForLightbox.length === 0 || lightboxIndex >= currentListForLightbox.length) {
-                if (currentListForLightbox && currentListForLightbox.length > 0) {
-                    lightboxIndex = currentListForLightbox.length - 1;
-                } else {
-                    closeLightbox();
-                    showToast("Lista de carros vazia", "⚠️");
-                    return;
-                }
-            }
-            const car = currentListForLightbox[lightboxIndex];
-            if(!car) {
-                closeLightbox();
-                return;
-            }
-            document.getElementById('lightboxImg').src = car.photo;
-            document.getElementById('lightboxTitle').innerHTML = car.model || 'Modelo não informado';
-            document.getElementById('lightboxCategory').innerHTML = car.category || '';
-            const actionArea = document.getElementById('lightboxActionArea');
-            if (currentLightboxType === 'meus') {
-                actionArea.innerHTML = `<button onclick="toggleNegotiable('${car.id}', ${car.negotiable})" class="w-full py-5 rounded-2xl font-racing uppercase italic shadow-2xl ${car.negotiable ? 'bg-red-600 text-white' : 'bg-emerald-500 text-black'} active:scale-95 transition-all">${car.negotiable ? 'Remover Oferta' : 'Ofertar na Rede'}</button>`;
-            } else {
-                actionArea.innerHTML = '';
-            }
-        }
-
-        window.toggleNegotiable = async function(id, s) {
-            await updateDoc(doc(db, "garagens", auth.currentUser.uid, "miniaturas", id), { negotiable: !s });
-            showToast(s ? "Removido das ofertas" : "Ofertado na rede!", "🤝");
-            vibrate();
-            const index = todosCarros.findIndex(c => c.id === id);
-            if (index !== -1) { todosCarros[index].negotiable = !s; renderGaragemPaginada(); }
-            if (document.getElementById('lightbox').style.display === 'flex') { 
-                const idx = currentListForLightbox.findIndex(c => c.id === id); 
-                if (idx !== -1) { currentListForLightbox[idx].negotiable = !s; updateLightbox(); } 
-            }
-        };
-
-        window.saveContactProfile = async function() { 
-            const displayName = document.getElementById('userDisplayName').value.trim().toUpperCase();
-            const displayNameFinal = displayName || "COLECIONADOR";
-            const perfilRef = doc(db, "perfis", auth.currentUser.uid);
-            const perfilDoc = await getDoc(perfilRef);
-            if (perfilDoc.exists()) {
-                await updateDoc(perfilRef, { whatsapp: document.getElementById('userWhatsapp').value, email: document.getElementById('userEmailContact').value, displayName: displayNameFinal });
-            } else {
-                await setDoc(perfilRef, { whatsapp: document.getElementById('userWhatsapp').value, email: document.getElementById('userEmailContact').value, displayName: displayNameFinal });
-            }
-            currentUserDisplayName = displayNameFinal;
-            atualizarNomeCabecalho();
-            limparCache();
-            showToast("Perfil atualizado!", "👤"); 
-            vibrate();
-        };
-        
-        async function loadContactProfile() { 
-            const d = await getDoc(doc(db, "perfis", auth.currentUser.uid)); 
-            if(d.exists()) { 
-                document.getElementById('userWhatsapp').value = d.data().whatsapp || ""; 
-                document.getElementById('userEmailContact').value = d.data().email || "";
-                currentUserDisplayName = d.data().displayName || "COLECIONADOR";
-                document.getElementById('userDisplayName').value = currentUserDisplayName === "COLECIONADOR" ? "" : currentUserDisplayName;
-                atualizarNomeCabecalho();
-                if (!d.data().displayName || d.data().displayName === "COLECIONADOR") {
-                    setTimeout(() => { abrirModalNome(); }, 1000);
-                } else { mostrarBoasVindas(); }
-            } else {
-                currentUserDisplayName = "COLECIONADOR";
-                atualizarNomeCabecalho();
-                setTimeout(() => { abrirModalNome(); }, 1000);
-            }
-        }
-
-        // ====== FUNÇÃO DE SUGESTÃO CORRIGIDA ======
-        async function fetchSuggestions(val, boxId, isGlobal = false) {
-            const sugBox = document.getElementById(boxId);
-            const searchVal = val.trim().toUpperCase();
-            
-            if (searchVal.length < 2) {
-                sugBox.style.display = 'none';
-                sugBox.innerHTML = '';
-                return;
-            }
-            
-            try {
-                const resultadosLocais = todosCarros.filter(car => {
-                    const modelo = (car.model || '').toUpperCase();
-                    return modelo.includes(searchVal);
-                });
-                
-                if (resultadosLocais.length > 0 && !isGlobal) {
-                    let html = resultadosLocais.slice(0, 5).map(item => {
-                        const userHasIt = todosCarros.some(car => car.model === item.model);
-                        const hasItBadge = userHasIt ? '<span class="ml-2 text-emerald-400 text-[8px]">✅ JÁ TEM</span>' : '';
-                        return `<div class="flex items-center gap-4 p-4 border-b border-zinc-900/50 cursor-pointer hover:bg-zinc-800/50 transition-all" onclick="selectNew('${item.model.replace(/'/g, "\\'")}', '${item.photo || ''}', '${(item.series || '').replace(/'/g, "\\'")}', '${item.category || 'MAINLINE'}')"><img src="${item.photo || ''}" class="w-12 h-12 rounded-xl object-cover shadow-md"><div class="text-[10px] font-black uppercase flex-1"><p class="text-white">${item.model}${hasItBadge}</p><p class="text-yellow-500 mt-0.5">${item.series || 'Série?'}</p></div></div>`;
-                    }).join('');
-                    
-                    sugBox.innerHTML = html;
-                    sugBox.style.display = 'block';
-                    return;
-                }
-                
-                if (!isGlobal && resultadosLocais.length > 0) {
-                    return;
-                }
-                
-                const q = query(collectionGroup(db, "miniaturas"), limit(20));
-                const snap = await getDocs(q);
-                
-                let results = snap.docs.map(d => ({ 
-                    ...d.data(), 
-                    ownerId: d.ref.parent.parent.id, 
-                    docId: d.id 
-                }));
-                
-                results = results.filter(data => {
-                    const modelo = (data.model || '').toUpperCase();
-                    return modelo.includes(searchVal);
-                });
-                
-                if (isGlobal) {
-                    results = results.filter(data => data.negotiable === true);
-                }
-                
-                const modeloCount = {};
-                results.forEach(item => {
-                    const key = item.model.toUpperCase();
-                    if (!modeloCount[key]) {
-                        modeloCount[key] = { item, count: 0 };
-                    }
-                    modeloCount[key].count++;
-                });
-                
-                const modelosUnicos = Object.values(modeloCount)
-                    .sort((a, b) => b.count - a.count)
-                    .slice(0, 8)
-                    .map(entry => entry.item);
-                
-                if (modelosUnicos.length > 0) {
-                    const html = modelosUnicos.map(item => {
-                        const userHasIt = todosCarros.some(car => car.model === item.model);
-                        const hasItBadge = userHasIt ? '<span class="ml-2 text-emerald-400 text-[8px]">✅ JÁ TEM</span>' : '';
-                        const onclickAttr = isGlobal ? 
-                            `selectGlobal('${item.model.replace(/'/g, "\\'")}', '${item.photo || ''}', '${(item.series || '').replace(/'/g, "\\'")}', '${item.category || 'MAINLINE'}', '${item.ownerId}')` :
-                            `selectNew('${item.model.replace(/'/g, "\\'")}', '${item.photo || ''}', '${(item.series || '').replace(/'/g, "\\'")}', '${item.category || 'MAINLINE'}')`;
-                        
-                        return `<div class="flex items-center gap-4 p-4 border-b border-zinc-900/50 cursor-pointer hover:bg-zinc-800/50 transition-all" onclick="${onclickAttr}"><img src="${item.photo || ''}" class="w-12 h-12 rounded-xl object-cover shadow-md"><div class="text-[10px] font-black uppercase flex-1"><p class="text-white">${item.model}${hasItBadge}</p><p class="text-yellow-500 mt-0.5">${item.series || 'Série?'}</p></div></div>`;
-                    }).join('');
-                    
-                    sugBox.innerHTML = html;
-                    sugBox.style.display = 'block';
-                } else {
-                    if (!isGlobal) {
-                        sugBox.innerHTML = `<div class="p-4 text-center text-zinc-500 text-[10px]">Nenhum modelo encontrado</div>`;
-                        sugBox.style.display = 'block';
-                    } else {
-                        sugBox.style.display = 'none';
-                    }
-                }
-            } catch (error) {
-                console.error('Erro ao buscar sugestões:', error);
-                sugBox.style.display = 'none';
-            }
-        }
-
-        // ====== FUNÇÃO SELECT NEW ======
-        window.selectNew = function(m, p, s, c) { 
-            document.getElementById('hwModel').value = m; 
-            document.getElementById('hwSeries').value = s || ''; 
-            document.getElementById('hwCategory').value = c || 'MAINLINE'; 
-            document.getElementById('selectedCategoryText').innerHTML = c || 'MAINLINE';
-            document.getElementById('newModelSuggestions').style.display = 'none'; 
-            if(p && p !== '') { 
-                currentPhoto = p; 
-                document.getElementById('imgPreview').src = p; 
-                document.getElementById('previewContainer').classList.remove('hidden'); 
-                showToast("Modelo sugerido carregado!", "✨");
-            } 
-            pendingCar = { model: m };
-        };
-
-        window.selectGlobal = function(m, p, s, c, ownerId) { 
-            document.getElementById('globalSearchInput').value = m; 
-            document.getElementById('globalSearchSuggestions').style.display = 'none'; 
-            globalResults = [{ model: m, photo: p, series: s, category: c, ownerId: ownerId }]; 
-            renderGlobalResults(); 
-            renderShopeeAds(m);
-        };
-
-        window.switchTab = function(t) { 
-            if (!checkUnsavedCar() && t !== 'novo') return;
-            ['novo','garagem','negociaveis'].forEach(x => { 
-                const section = document.getElementById('section'+x.charAt(0).toUpperCase()+x.slice(1)); 
-                const tab = document.getElementById('tab'+x.charAt(0).toUpperCase()+x.slice(1)); 
-                if (section) section.classList.add('hidden'); 
-                if (tab) tab.classList.remove('active'); 
-            }); 
-            const newSection = document.getElementById('section'+t.charAt(0).toUpperCase()+t.slice(1)); 
-            const newTab = document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)); 
-            if (newSection) newSection.classList.remove('hidden'); 
-            if (newTab) newTab.classList.add('active');
-            if(t === 'negociaveis') switchSubTab('buscar');
-            if(t === 'garagem') { 
-                currentFilter = 'TODOS'; 
-                albumPaginaAtual = 0;
-                recarregarGaragemCompleta();
-                if (unsubscribeGarage) {
-                    unsubscribeGarage();
-                    const user = auth.currentUser;
-                    if (user) {
-                        const q = query(collection(db, "garagens", user.uid, "miniaturas"), orderBy("createdAt", "desc"));
-                        unsubscribeGarage = onSnapshot(q, async (snap) => { 
-                            const novosCarros = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            const novosMap = new Map(novosCarros.map(c => [c.id, c]));
-                            for (let i = 0; i < todosCarros.length; i++) {
-                                const novo = novosMap.get(todosCarros[i].id);
-                                if (novo) { todosCarros[i] = { ...todosCarros[i], ...novo }; }
-                            }
-                            novosCarros.forEach(c => { if (!todosCarros.find(ex => ex.id === c.id)) { todosCarros.push(c); } });
-                            todosCarros = todosCarros.filter(c => novosMap.has(c.id));
-                            renderGaragemPaginada();
-                            if (document.getElementById('contentMeus').style.display !== 'none') { renderNegociosPaginados(); }
-                        });
-                    }
-                }
-            }
-            vibrate();
-        };
-
-        window.switchSubTab = function(s) { 
-            ['buscar','meus','perfil'].forEach(x => { const content = document.getElementById('content'+x.charAt(0).toUpperCase()+x.slice(1)); const subTab = document.getElementById('subTab'+x.charAt(0).toUpperCase()+x.slice(1)); if (content) content.classList.add('hidden'); if (subTab) subTab.classList.remove('active'); }); 
-            const newContent = document.getElementById('content'+s.charAt(0).toUpperCase()+s.slice(1)); const newSubTab = document.getElementById('subTab'+s.charAt(0).toUpperCase()+s.slice(1)); if (newContent) newContent.classList.remove('hidden'); if (newSubTab) newSubTab.classList.add('active');
-            if (s === 'meus') {
-                renderNegociosPaginados();
-            }
-        };
-
-        function renderNegociosPaginados() {
-            const negotiablesContainer = document.getElementById('hwListMyNegotiables');
-            if (negotiablesContainer) {
-                negotiablesContainer.innerHTML = todosCarros.map((car, i) => `
-                    <div class="hw-card p-4 flex gap-4 items-center ${car.negotiable ? 'border-emerald-500/50' : ''}">
-                        <img src="${car.photo}" onclick="openLightbox(${i}, 'meus')" class="w-14 h-14 rounded-xl object-cover cursor-pointer">
-                        <div class="flex-1">
-                            <h5 class="text-[10px] font-black uppercase text-white truncate">${car.model}</h5>
-                            <button onclick="toggleNegotiable('${car.id}', ${car.negotiable})" class="mt-2 px-4 py-2 rounded-xl text-[8px] font-black uppercase transition-all ${car.negotiable ? 'bg-red-950 text-red-400' : 'bg-emerald-950 text-emerald-400'} active:scale-95">
-                                ${car.negotiable ? 'Remover Oferta' : 'Ofertar Troca'}
-                            </button>
-                        </div>
-                    </div>`).join('');
-            }
-        }
-        
-        const seriesInput = document.getElementById('hwSeries');
-        if (seriesInput) {
-            seriesInput.addEventListener('focus', () => showSeriesSuggestions());
-            seriesInput.addEventListener('input', () => showSeriesSuggestions());
-        }
-
-        setupPasteListener();
-
-        onAuthStateChanged(auth, async (u) => {
-            clearAllInputs(); 
-            switchTab('novo'); 
-            if (u) {
-                document.getElementById('authScreen').style.display = 'none';
-                document.getElementById('mainContent').classList.remove('hidden');
-                await loadContactProfile();
-                if (unsubscribeGarage) unsubscribeGarage();
-                await recarregarGaragemCompleta();
-                const viewSalva = localStorage.getItem('visualizacao');
-                if (viewSalva === 'ALBUM') { alternarVisualizacao('ALBUM'); }
-                else { alternarVisualizacao('LISTA'); }
-                const q = query(collection(db, "garagens", u.uid, "miniaturas"), orderBy("createdAt", "desc"));
-                unsubscribeGarage = onSnapshot(q, async (snap) => { 
-                    const novosCarros = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    const novosMap = new Map(novosCarros.map(c => [c.id, c]));
-                    for (let i = 0; i < todosCarros.length; i++) {
-                        const novo = novosMap.get(todosCarros[i].id);
-                        if (novo) { todosCarros[i] = { ...todosCarros[i], ...novo }; }
-                    }
-                    novosCarros.forEach(c => { if (!todosCarros.find(ex => ex.id === c.id)) { todosCarros.push(c); } });
-                    todosCarros = todosCarros.filter(c => novosMap.has(c.id));
-                    renderGaragemPaginada();
-                    if (document.getElementById('contentMeus').style.display !== 'none') { renderNegociosPaginados(); }
-                });
-            } else {
-                document.getElementById('authScreen').style.display = 'flex';
-                document.getElementById('mainContent').classList.add('hidden');
-            }
-        });
-
-        const salvarNomeModalBtn = document.getElementById('salvarNomeModal');
-        if (salvarNomeModalBtn) { salvarNomeModalBtn.addEventListener('click', salvarNomeModal); }
+        document.getElementById('confirmPasteBtn').addEventListener('click', window.confirmarPasteImage);
+        document.getElementById('cancelPasteBtn').addEventListener('click', fecharModalColarImagem);
 
         // ====== EVENTO DE INPUT ======
         const hwModelInput = document.getElementById('hwModel');
@@ -3624,15 +3553,24 @@
                 renderShopeeAds(valor); 
             });
         }
-        
+
+        document.getElementById('excluirContaBtn').addEventListener('click', () => window.excluirConta());
+
+        document.addEventListener('click', (e) => {
+            const seriesInput = document.getElementById('hwSeries');
+            const seriesBox = document.getElementById('seriesSuggestions');
+            const categoryButton = document.getElementById('categoryButton');
+            const categoryDropdown = document.getElementById('categoryDropdown');
+            if (seriesInput && seriesBox && !seriesInput.contains(e.target) && !seriesBox.contains(e.target)) seriesBox.style.display = 'none';
+            if (categoryButton && categoryDropdown && !categoryButton.contains(e.target) && !categoryDropdown.contains(e.target)) categoryDropdown.style.display = 'none';
+            const suggestionItem = e.target.closest('.series-suggestion');
+            if (suggestionItem) { const value = suggestionItem.getAttribute('data-value'); if (value) selectSeries(value); }
+        });
+
         window.onload = function() { clearAllInputs(); };
-        
         window.focusPasteInput = focusPasteInput;
 
-        // ============================================
-        // ====== FUNÇÕES QR CODE =====================
-        // ============================================
-
+        // ====== QR CODE ======
         window.gerarQRCode = async function() {
             const user = auth.currentUser;
             if (!user) {
@@ -3751,10 +3689,6 @@
             }
         });
 
-        // ============================================
-        // ====== FUNÇÃO COMPARTILHAR WHATSAPP ========
-        // ============================================
-
         window.compartilharWhatsApp = async function() {
             const user = auth.currentUser;
             if (!user) {
@@ -3805,6 +3739,108 @@
                 }
             }
         };
+
+        // ====== INICIALIZAÇÃO ======
+        async function recarregarGaragemCompleta() {
+            ultimoDoc = null;
+            temMaisCarros = true;
+            todosCarros = [];
+            albumPaginaAtual = 0;
+            await carregarGaragemPaginada(true);
+        }
+
+        window.carregarMaisCarros = function() { carregarGaragemPaginada(false); };
+
+        onAuthStateChanged(auth, async (u) => {
+            clearAllInputs(); 
+            switchTab('novo'); 
+            if (u) {
+                document.getElementById('authScreen').style.display = 'none';
+                document.getElementById('mainContent').classList.remove('hidden');
+                await loadContactProfile();
+                if (unsubscribeGarage) unsubscribeGarage();
+                await recarregarGaragemCompleta();
+                const viewSalva = localStorage.getItem('visualizacao');
+                if (viewSalva === 'ALBUM') { alternarVisualizacao('ALBUM'); }
+                else { alternarVisualizacao('LISTA'); }
+                const q = query(collection(db, "garagens", u.uid, "miniaturas"), orderBy("createdAt", "desc"));
+                unsubscribeGarage = onSnapshot(q, async (snap) => { 
+                    const novosCarros = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    const novosMap = new Map(novosCarros.map(c => [c.id, c]));
+                    for (let i = 0; i < todosCarros.length; i++) {
+                        const novo = novosMap.get(todosCarros[i].id);
+                        if (novo) { todosCarros[i] = { ...todosCarros[i], ...novo }; }
+                    }
+                    novosCarros.forEach(c => { if (!todosCarros.find(ex => ex.id === c.id)) { todosCarros.push(c); } });
+                    todosCarros = todosCarros.filter(c => novosMap.has(c.id));
+                    renderGaragemPaginada();
+                    if (document.getElementById('contentMeus').style.display !== 'none') { renderNegociosPaginados(); }
+                });
+            } else {
+                document.getElementById('authScreen').style.display = 'flex';
+                document.getElementById('mainContent').classList.add('hidden');
+            }
+        });
+
+        const salvarNomeModalBtn = document.getElementById('salvarNomeModal');
+        if (salvarNomeModalBtn) { salvarNomeModalBtn.addEventListener('click', salvarNomeModal); }
+
+        const temaBtn = document.getElementById('temaBtn');
+        if (temaBtn) temaBtn.addEventListener('click', alternarTema);
+        carregarTema();
+
+        window.focusPasteInput = focusPasteInput;
+
+        // ====== INICIALIZAÇÃO DO CARREGAMENTO ======
+        async function carregarGaragemPaginada(resetar = true) {
+            const user = auth.currentUser;
+            if (!user || carregando) return;
+            if (resetar) {
+                ultimoDoc = null;
+                temMaisCarros = true;
+                todosCarros = [];
+                document.getElementById('btnCarregarMais').classList.add('hidden');
+                const cacheKey = `cache_garagem_${user.uid}_${currentFilter}`;
+                const cacheData = lerCache(cacheKey);
+                if (cacheData && cacheData.length > 0) {
+                    todosCarros = cacheData;
+                    renderGaragemPaginada();
+                    if (currentView === 'ALBUM') renderAlbum();
+                    return;
+                }
+            }
+            if (!temMaisCarros) return;
+            carregando = true;
+            document.getElementById('loadingMore').classList.remove('hidden');
+            try {
+                let q;
+                if (ultimoDoc) {
+                    q = query(collection(db, "garagens", user.uid, "miniaturas"), orderBy("createdAt", "desc"), startAfter(ultimoDoc), limit(ITENS_POR_PAGINA));
+                } else {
+                    q = query(collection(db, "garagens", user.uid, "miniaturas"), orderBy("createdAt", "desc"), limit(ITENS_POR_PAGINA));
+                }
+                const snapshot = await getDocs(q);
+                if (snapshot.empty) {
+                    temMaisCarros = false;
+                    document.getElementById('btnCarregarMais').classList.add('hidden');
+                } else {
+                    ultimoDoc = snapshot.docs[snapshot.docs.length - 1];
+                    const novosCarros = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    todosCarros = [...todosCarros, ...novosCarros];
+                    const cacheKey = `cache_garagem_${user.uid}_${currentFilter}`;
+                    salvarCache(cacheKey, todosCarros);
+                    if (snapshot.docs.length < ITENS_POR_PAGINA) {
+                        temMaisCarros = false;
+                        document.getElementById('btnCarregarMais').classList.add('hidden');
+                    } else {
+                        document.getElementById('btnCarregarMais').classList.remove('hidden');
+                    }
+                }
+                renderGaragemPaginada();
+                if (currentView === 'ALBUM') renderAlbum();
+            } catch (error) { showToast("Erro ao carregar garagem", "❌"); }
+            finally { carregando = false; document.getElementById('loadingMore').classList.add('hidden'); }
+        }
     </script>
 </body>
 </html>
